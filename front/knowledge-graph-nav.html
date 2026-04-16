@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识图谱导航</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #4ecdc4;
+        }
+        .subtitle {
+            font-size: 18px;
+            margin-bottom: 40px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .nav-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .nav-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .nav-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+        .card-description {
+            margin-bottom: 20px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .nav-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .warning h3 {
+            color: #ffc107;
+            margin-top: 0;
+        }
+        .feature-list {
+            text-align: left;
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .feature-list li:before {
+            content: "✓";
+            color: #4ecdc4;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">知识图谱导航</h1>
+        <p class="subtitle">选择您要访问的知识图谱类型</p>
+        
+        <div class="warning">
+            <h3>⚠️ 重要提醒</h3>
+            <p>如果您看到的是抽象的线框图形而不是章节节点，说明您访问的是课程页面的知识图谱。请使用下面的链接访问正确的《中国近现代史纲要》知识图谱。</p>
+        </div>
+
+        <div class="nav-cards">
+            <div class="nav-card">
+                <div class="card-title">📚 《中国近现代史纲要》知识图谱</div>
+                <div class="card-description">
+                    这是我们专门实现的《中国近现代史纲要》章节节点布局，包含12个圆形节点代表各个章节。
+                </div>
+                <ul class="feature-list">
+                    <li>12个章节节点</li>
+                    <li>炫彩视觉效果</li>
+                    <li>点击跳转功能</li>
+                    <li>知识点高亮展示</li>
+                </ul>
+                <a href="/knowledge-graph" class="nav-button">进入知识图谱</a>
+            </div>
+
+            <div class="nav-card">
+                <div class="card-title">🔍 知识点详情页面</div>
+                <div class="card-description">
+                    点击章节节点后跳转的详情页面，展示该章节的知识点高亮和缩放功能。
+                </div>
+                <ul class="feature-list">
+                    <li>知识点高亮显示</li>
+                    <li>缩放控制功能</li>
+                    <li>全局视图展示</li>
+                    <li>高亮状态保持</li>
+                </ul>
+                <a href="/knowledge-detail?graphData=%7B%22name%22%3A%22历史是最好的教科书%22%2C%22id%22%3A1%2C%22children%22%3A%5B%7B%22name%22%3A%22历史是最好的教科书%22%2C%22id%22%3A1%2C%22children%22%3A%5B%7B%22id%22%3A101%2C%22name%22%3A%22历史是最好的教科书%22%7D%2C%7B%22id%22%3A102%2C%22name%22%3A%22历史是最好的老师%22%7D%2C%7B%22id%22%3A103%2C%22name%22%3A%22历史是最好的营养剂%22%7D%5D%7D%5D%7D&displayTitle=历史是最好的教科书&courseName=《中国近现代史纲要》&highlightIds=%5B101%2C102%2C103%5D" class="nav-button">查看详情示例</a>
+            </div>
+        </div>
+
+        <div class="nav-card">
+            <div class="card-title">📋 当前问题说明</div>
+            <div class="card-description">
+                您当前访问的 <code>http://localhost:5173/course?id=101</code> 是课程页面，显示的是"计算机网络原理"课程的知识图谱，而不是我们实现的《中国近现代史纲要》知识图谱。
+            </div>
+            <ul class="feature-list">
+                <li>课程页面显示后端API返回的数据</li>
+                <li>知识图谱组件使用ECharts渲染</li>
+                <li>显示的是抽象的网络图形</li>
+                <li>不是我们实现的章节节点布局</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

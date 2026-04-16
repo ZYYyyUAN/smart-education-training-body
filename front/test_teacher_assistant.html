@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教师AI助手API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>教师AI助手API测试</h1>
+    
+    <div class="test-container">
+        <h3>测试教师AI助手对话</h3>
+        <div class="input-group">
+            <label for="message">输入消息:</label>
+            <textarea id="message" rows="3" placeholder="请输入您的问题...">请帮我规划一下Java课程的教学内容</textarea>
+        </div>
+        <button onclick="testTeacherAssistant()">发送消息</button>
+        <div id="response" class="response"></div>
+    </div>
+
+    <script>
+        async function testTeacherAssistant() {
+            const message = document.getElementById('message').value;
+            const responseDiv = document.getElementById('response');
+            
+            if (!message.trim()) {
+                responseDiv.innerHTML = '<span class="error">请输入消息内容</span>';
+                return;
+            }
+            
+            responseDiv.innerHTML = '正在发送请求...';
+            
+            try {
+                const response = await fetch('/api/teacher-assistant', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token') || 'test-token'}`
+                    },
+                    body: JSON.stringify({
+                        memoryId: Date.now(),
+                        userMessage: message
+                    })
+                });
+
+                if (response.ok) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let result = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        const chunk = decoder.decode(value);
+                        result += chunk;
+                        responseDiv.textContent = result;
+                    }
+                } else {
+                    const errorText = await response.text();
+                    responseDiv.innerHTML = `<span class="error">请求失败: ${response.status} - ${errorText}</span>`;
+                }
+            } catch (error) {
+                console.error('API调用错误:', error);
+                responseDiv.innerHTML = `<span class="error">网络错误: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.java.ai.langchain4j.mapper.NotificationMapper">
+
+    <!-- 获取所有通知（广播通知） -->
+    <select id="selectAllNotifications" resultType="com.atguigu.java.ai.langchain4j.entity.Notification">
+        SELECT * FROM notification 
+        WHERE receiver_id IS NULL 
+        ORDER BY send_time DESC
+    </select>
+    
+    <!-- 获取指定用户的通知列表 -->
+    <select id="selectByReceiverId" resultType="com.atguigu.java.ai.langchain4j.entity.Notification">
+        SELECT * FROM notification 
+        WHERE receiver_id = #{receiverId} 
+        ORDER BY send_time DESC
+    </select>
+    
+    <!-- 获取用户的所有通知（包括广播通知和专属通知） -->
+    <select id="selectUserNotifications" resultType="com.atguigu.java.ai.langchain4j.entity.Notification">
+        SELECT * FROM notification 
+        WHERE receiver_id IS NULL OR receiver_id = #{userId} 
+        ORDER BY send_time DESC
+    </select>
+    
+    <!-- 标记通知为已读 -->
+    <insert id="markAsRead">
+        INSERT INTO notification_read_record (notification_id, user_id, read_time, create_time)
+        VALUES (#{notificationId}, #{userId}, #{readTime}, NOW())
+        ON DUPLICATE KEY UPDATE read_time = #{readTime}
+    </insert>
+    
+    <!-- 获取用户未读通知数量 -->
+    <select id="getUnreadCountByUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM notification n
+        WHERE (n.receiver_id IS NULL OR n.receiver_id = #{userId})
+        AND NOT EXISTS (
+            SELECT 1 FROM notification_read_record nrr 
+            WHERE nrr.notification_id = n.id AND nrr.user_id = #{userId}
+        )
+    </select>
+    
+    <!-- 插入通知 -->
+    <insert id="insertNotification" parameterType="com.atguigu.java.ai.langchain4j.entity.Notification" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notification (
+            title, content, sender_id, sender_name, receiver_id, receiver_name,
+            is_important, course_name, notification_type, send_time, status,
+            create_time, update_time
+        ) VALUES (
+            #{title}, #{content}, #{senderId}, #{senderName}, #{receiverId}, #{receiverName},
+            #{isImportant}, #{courseName}, #{notificationType}, #{sendTime}, #{status},
+            #{createTime}, #{updateTime}
+        )
+    </insert>
+
+</mapper>

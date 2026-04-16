@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>题库题目选择功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .test-button {
+            background-color: #409eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .test-button:hover {
+            background-color: #66b1ff;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f9ff;
+            border: 1px solid #b3d8ff;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background-color: #fef0f0;
+            border-color: #fbc4c4;
+            color: #f56c6c;
+        }
+        .success {
+            background-color: #f0f9ff;
+            border-color: #b3d8ff;
+            color: #409eff;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>题库题目选择功能测试</h1>
+        
+        <div class="test-section">
+            <div class="test-title">1. 测试知识点数据获取</div>
+            <button class="test-button" onclick="testKnowledgeData()">获取知识点数据</button>
+            <div id="knowledgeResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">2. 测试题库数据获取</div>
+            <button class="test-button" onclick="testQuestionBankData()">获取题库数据</button>
+            <div id="questionBankResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">3. 测试根据知识点筛选题目</div>
+            <div class="form-group">
+                <label>课程ID:</label>
+                <input type="number" id="courseId" value="101">
+            </div>
+            <div class="form-group">
+                <label>知识点名称 (用逗号分隔):</label>
+                <input type="text" id="knowledgePoints" placeholder="例如: 嵌入式系统基础,C语言编程">
+            </div>
+            <button class="test-button" onclick="testQuestionFiltering()">测试题目筛选</button>
+            <div id="filterResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">4. 测试智能组卷（基于题库）</div>
+            <div class="form-group">
+                <label>试卷标题:</label>
+                <input type="text" id="examTitle" value="测试试卷 - 基于题库组卷">
+            </div>
+            <div class="form-group">
+                <label>试卷描述:</label>
+                <textarea id="examDescription">这是一个基于题库的智能组卷测试</textarea>
+            </div>
+            <div class="form-group">
+                <label>总题数:</label>
+                <input type="number" id="totalQuestions" value="5" min="1" max="20">
+            </div>
+            <div class="form-group">
+                <label>选中知识点:</label>
+                <input type="text" id="selectedKnowledgePoints" placeholder="例如: 嵌入式系统基础,C语言编程">
+            </div>
+            <button class="test-button" onclick="testExamGeneration()">测试智能组卷</button>
+            <div id="examResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 测试知识点数据获取
+        async function testKnowledgeData() {
+            const resultDiv = document.getElementById('knowledgeResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在获取知识点数据...';
+            
+            try {
+                const response = await fetch('/api/graph/course?courseId=101');
+                const data = await response.json();
+                
+                resultDiv.textContent = '知识点数据获取成功:\n' + JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = '知识点数据获取失败: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 测试题库数据获取
+        async function testQuestionBankData() {
+            const resultDiv = document.getElementById('questionBankResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在获取题库数据...';
+            
+            try {
+                const response = await fetch('/api/question-bank/course/101');
+                const data = await response.json();
+                
+                resultDiv.textContent = '题库数据获取成功:\n' + JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = '题库数据获取失败: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 测试题目筛选
+        async function testQuestionFiltering() {
+            const resultDiv = document.getElementById('filterResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在测试题目筛选...';
+            
+            const courseId = document.getElementById('courseId').value;
+            const knowledgePoints = document.getElementById('knowledgePoints').value;
+            
+            try {
+                const requestData = {
+                    courseId: parseInt(courseId),
+                    selectedKnowledgePoints: knowledgePoints.split(',').map(kp => kp.trim()).filter(kp => kp)
+                };
+                
+                const response = await fetch('/auto-exam/filter-questions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    resultDiv.textContent = '题目筛选成功:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = '题目筛选失败: ' + data.message;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = '题目筛选请求失败: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 测试智能组卷
+        async function testExamGeneration() {
+            const resultDiv = document.getElementById('examResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在测试智能组卷...';
+            
+            try {
+                const requestData = {
+                    courseId: parseInt(document.getElementById('courseId').value),
+                    teacherId: 1,
+                    examTitle: document.getElementById('examTitle').value,
+                    examDescription: document.getElementById('examDescription').value,
+                    totalQuestions: parseInt(document.getElementById('totalQuestions').value),
+                    questionDistribution: {
+                        choice: 3,
+                        short_answer: 2,
+                        programming: 0
+                    },
+                    difficultyDistribution: {
+                        easy: 0.2,
+                        medium: 0.5,
+                        hard: 0.3
+                    },
+                    timeLimitMinutes: 60,
+                    generationStrategy: 'AI智能组卷',
+                    selectedKnowledgePoints: document.getElementById('selectedKnowledgePoints').value
+                        .split(',').map(kp => kp.trim()).filter(kp => kp)
+                };
+                
+                const response = await fetch('/auto-exam/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    resultDiv.textContent = '智能组卷成功:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = '智能组卷失败: ' + data.message;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = '智能组卷请求失败: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>

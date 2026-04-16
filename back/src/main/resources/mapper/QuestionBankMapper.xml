@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.java.ai.langchain4j.mapper.QuestionBankMapper">
+    <insert id="insertBatch">
+        insert into question_bank (
+            course_id,
+            type,
+            content,
+            answer,
+            knowledge_point,
+            difficulty_level,
+            category_id,
+            estimated_time_minutes,
+            tags,
+            is_ai_generated,
+            generation_prompt,
+            quality_score,
+            created_by
+        )
+        values
+        <foreach collection="list" item="item" separator=",">
+            (
+              #{item.courseId},
+              #{item.type},
+              #{item.content},
+              #{item.answer},
+              #{item.knowledgePoint},
+              #{item.difficultyLevel},
+              #{item.categoryId},
+              #{item.estimatedTimeMinutes},
+              #{item.tags},
+              #{item.isAiGenerated},
+              #{item.generationPrompt},
+              #{item.qualityScore},
+              #{item.createdBy}
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectByCourseId" resultType="com.atguigu.java.ai.langchain4j.entity.QuestionBank">
+        SELECT * FROM question_bank WHERE course_id = #{courseId}
+    </select>
+
+    <select id="selectByCategoryId" resultType="com.atguigu.java.ai.langchain4j.entity.QuestionBank">
+        SELECT * FROM question_bank WHERE category_id = #{categoryId}
+    </select>
+
+    <select id="selectByExamId" resultType="com.atguigu.java.ai.langchain4j.entity.QuestionBank">
+        SELECT qb.* FROM question_bank qb
+        WHERE qb.id IN (
+            -- 从传统考试表获取题目
+            SELECT eq.question_id FROM exam_question eq WHERE eq.exam_id = #{examId}
+            UNION
+            -- 从AI生成考试表获取题目
+            SELECT aeq.question_bank_id FROM auto_exam_question aeq WHERE aeq.exam_id = #{examId}
+        )
+        ORDER BY qb.id
+    </select>
+
+    <select id="selectByIds" resultType="com.atguigu.java.ai.langchain4j.entity.QuestionBank">
+        SELECT * FROM question_bank 
+        WHERE id IN 
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.java.ai.langchain4j.mapper.PracticeLogMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO practice_log (student_id, question_id, answer_text, score, is_correct, error_reason, submitted_at)
+        VALUES (#{studentId}, #{questionId}, #{answerText}, #{score}, #{isCorrect}, #{errorReason}, #{submittedAt})
+    </insert>
+
+</mapper>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test AI Notes API</title>
+</head>
+<body>
+    <h1>Test AI Notes API</h1>
+    <button onclick="testAPI()">Test API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                console.log('Testing /ai-notes/list-by-document endpoint...');
+                
+                // 模拟用户登录状态
+                localStorage.setItem('currentUser', JSON.stringify({id: 1}));
+                localStorage.setItem('token', 'test-token');
+                
+                const response = await fetch('http://localhost:8080/ai-notes/list-by-document', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'X-User-Id': '1'
+                    },
+                    body: JSON.stringify({
+                        userId: 1,
+                        documentName: 'test.txt',
+                        documentContent: 'test content for api testing'
+                    })
+                });
+                
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    resultDiv.innerHTML = `<p style="color: red;">Error ${response.status}: ${errorText}</p>`;
+                    return;
+                }
+                
+                const result = await response.json();
+                console.log('Success result:', result);
+                resultDiv.innerHTML = `<pre style="color: green;">${JSON.stringify(result, null, 2)}</pre>`;
+                
+            } catch (error) {
+                console.error('Request failed:', error);
+                resultDiv.innerHTML = `<p style="color: red;">Request failed: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

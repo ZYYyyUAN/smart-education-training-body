@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识点选择功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .test-button {
+            background-color: #409eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .test-button:hover {
+            background-color: #66b1ff;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f9ff;
+            border: 1px solid #b3d8ff;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .error {
+            background-color: #fef0f0;
+            border-color: #fbc4c4;
+            color: #f56c6c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>知识点选择功能测试</h1>
+        
+        <div class="test-section">
+            <div class="test-title">1. 测试知识点数据获取</div>
+            <button class="test-button" onclick="testKnowledgeData()">获取知识点数据</button>
+            <div id="knowledgeResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">2. 测试组卷API（带知识点选择）</div>
+            <button class="test-button" onclick="testExamGeneration()">测试智能组卷</button>
+            <div id="examResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">3. 测试快速组卷</div>
+            <button class="test-button" onclick="testQuickGeneration()">测试快速组卷</button>
+            <div id="quickResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 测试知识点数据获取
+        async function testKnowledgeData() {
+            const resultDiv = document.getElementById('knowledgeResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在获取知识点数据...';
+            
+            try {
+                const response = await fetch('/api/graph/course?courseId=101');
+                const data = await response.json();
+                
+                resultDiv.textContent = '知识点数据获取成功:\n' + JSON.stringify(data, null, 2);
+                resultDiv.className = 'result';
+            } catch (error) {
+                resultDiv.textContent = '知识点数据获取失败: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 测试智能组卷
+        async function testExamGeneration() {
+            const resultDiv = document.getElementById('examResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在测试智能组卷...';
+            
+            try {
+                const requestData = {
+                    courseId: 101,
+                    teacherId: 1,
+                    examTitle: '测试试卷 - 知识点选择',
+                    examDescription: '这是一个测试试卷，用于验证知识点选择功能',
+                    totalQuestions: 10,
+                    questionDistribution: {
+                        choice: 6,
+                        short_answer: 3,
+                        programming: 1
+                    },
+                    difficultyDistribution: {
+                        easy: 0.2,
+                        medium: 0.5,
+                        hard: 0.3
+                    },
+                    timeLimitMinutes: 60,
+                    generationStrategy: 'AI智能组卷',
+                    selectedKnowledgePoints: ['嵌入式系统基础', 'C语言编程', '硬件接口设计']
+                };
+                
+                const response = await fetch('/auto-exam/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    resultDiv.textContent = '智能组卷成功:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result';
+                } else {
+                    resultDiv.textContent = '智能组卷失败: ' + data.message;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = '智能组卷请求失败: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 测试快速组卷
+        async function testQuickGeneration() {
+            const resultDiv = document.getElementById('quickResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在测试快速组卷...';
+            
+            try {
+                const response = await fetch('/auto-exam/quick-generate?courseId=101&teacherId=1&examTitle=快速测试试卷&totalQuestions=5');
+                
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    resultDiv.textContent = '快速组卷成功:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result';
+                } else {
+                    resultDiv.textContent = '快速组卷失败: ' + data.message;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = '快速组卷请求失败: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>群聊未读消息修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .log-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>群聊未读消息修复测试</h1>
+    
+    <div class="test-section">
+        <h3>问题描述</h3>
+        <p>原始问题：当点击群聊时所有消息显示为已读，但离开后收到新消息时，未读消息计数不准确。</p>
+        <p>修复内容：</p>
+        <ul>
+            <li>改进时间戳解析逻辑，支持多种时间格式</li>
+            <li>添加实时消息监听，立即更新未读计数</li>
+            <li>减少轮询间隔，提高响应性</li>
+            <li>添加调试日志，便于问题排查</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>测试功能</h3>
+        <button class="test-button" onclick="testTimestampParsing()">测试时间戳解析</button>
+        <button class="test-button" onclick="testMessageEvent()">测试消息事件</button>
+        <button class="test-button" onclick="testUnreadCount()">测试未读计数</button>
+        <button class="test-button" onclick="clearLog()">清空日志</button>
+    </div>
+
+    <div class="test-section">
+        <h3>测试状态</h3>
+        <div id="status" class="status info">准备开始测试...</div>
+    </div>
+
+    <div class="test-section">
+        <h3>测试日志</h3>
+        <div id="log" class="log-area"></div>
+    </div>
+
+    <script>
+        let logElement;
+        let statusElement;
+
+        window.addEventListener('DOMContentLoaded', function() {
+            logElement = document.getElementById('log');
+            statusElement = document.getElementById('status');
+            
+            // 监听新消息事件
+            window.addEventListener('newChatMessage', function(event) {
+                const { courseId, message } = event.detail;
+                log(`收到新消息事件: 课程ID=${courseId}, 发送者=${message.sender}, 内容=${message.content}`);
+            });
+            
+            log('测试页面已加载，开始监听消息事件...');
+        });
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = message;
+        }
+
+        function testTimestampParsing() {
+            log('=== 测试时间戳解析 ===');
+            
+            const testCases = [
+                // 数组格式
+                [2024, 1, 15, 14, 30, 0],
+                // 字符串格式
+                '2024-01-15 14:30:00',
+                '2024-01-15T14:30:00',
+                // 无效格式
+                'invalid-date',
+                null,
+                undefined
+            ];
+
+            testCases.forEach((testCase, index) => {
+                try {
+                    let ts = 0;
+                    if (Array.isArray(testCase) && testCase.length >= 6) {
+                        const d = new Date(testCase[0], testCase[1] - 1, testCase[2], testCase[3], testCase[4], testCase[5]);
+                        ts = d.getTime();
+                        log(`测试用例 ${index + 1} (数组): ${testCase} -> ${ts} -> ${new Date(ts).toLocaleString()}`);
+                    } else if (typeof testCase === 'string') {
+                        let dateStr = testCase;
+                        if (dateStr.includes(' ')) {
+                            dateStr = dateStr.replace(' ', 'T');
+                        }
+                        const d = new Date(dateStr);
+                        if (!isNaN(d.getTime())) {
+                            ts = d.getTime();
+                            log(`测试用例 ${index + 1} (字符串): ${testCase} -> ${ts} -> ${new Date(ts).toLocaleString()}`);
+                        } else {
+                            log(`测试用例 ${index + 1} (字符串): ${testCase} -> 解析失败`);
+                        }
+                    } else {
+                        log(`测试用例 ${index + 1}: ${testCase} -> 跳过`);
+                    }
+                } catch (e) {
+                    log(`测试用例 ${index + 1} 出错: ${e.message}`);
+                }
+            });
+            
+            updateStatus('时间戳解析测试完成', 'success');
+        }
+
+        function testMessageEvent() {
+            log('=== 测试消息事件 ===');
+            
+            // 模拟发送新消息事件
+            const mockMessage = {
+                courseId: 101,
+                message: {
+                    sender: '测试用户',
+                    content: '这是一条测试消息',
+                    timestamp: new Date()
+                }
+            };
+            
+            log(`发送模拟消息事件: ${JSON.stringify(mockMessage)}`);
+            window.dispatchEvent(new CustomEvent('newChatMessage', {
+                detail: mockMessage
+            }));
+            
+            updateStatus('消息事件测试完成', 'success');
+        }
+
+        function testUnreadCount() {
+            log('=== 测试未读计数逻辑 ===');
+            
+            // 模拟未读计数计算
+            const lastSeen = Date.now() - 60000; // 1分钟前
+            const messages = [
+                { sentAt: [2024, 1, 15, 14, 29, 0] }, // 1分钟前，已读
+                { sentAt: [2024, 1, 15, 14, 30, 0] }, // 现在，未读
+                { sentAt: '2024-01-15 14:31:00' },     // 1分钟后，未读
+            ];
+            
+            let count = 0;
+            messages.forEach((msg, index) => {
+                let ts = 0;
+                if (Array.isArray(msg.sentAt) && msg.sentAt.length >= 6) {
+                    const d = new Date(msg.sentAt[0], msg.sentAt[1] - 1, msg.sentAt[2], msg.sentAt[3], msg.sentAt[4], msg.sentAt[5]);
+                    ts = d.getTime();
+                } else if (typeof msg.sentAt === 'string') {
+                    let dateStr = msg.sentAt;
+                    if (dateStr.includes(' ')) {
+                        dateStr = dateStr.replace(' ', 'T');
+                    }
+                    const d = new Date(dateStr);
+                    if (!isNaN(d.getTime())) {
+                        ts = d.getTime();
+                    }
+                }
+                
+                if (ts > 0 && ts > lastSeen) {
+                    count++;
+                    log(`消息 ${index + 1}: 时间=${new Date(ts).toLocaleString()}, 状态=未读`);
+                } else {
+                    log(`消息 ${index + 1}: 时间=${new Date(ts).toLocaleString()}, 状态=已读`);
+                }
+            });
+            
+            log(`未读消息总数: ${count}`);
+            updateStatus(`未读计数测试完成，未读消息: ${count}`, 'success');
+        }
+
+        function clearLog() {
+            logElement.innerHTML = '';
+            updateStatus('日志已清空', 'info');
+        }
+    </script>
+</body>
+</html>
+

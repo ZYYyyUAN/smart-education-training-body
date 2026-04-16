@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重要提醒跳转测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .test-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        .exam-card {
+            border-left: 4px solid #f56c6c;
+        }
+        .assignment-card {
+            border-left: 4px solid #e6a23c;
+        }
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: white;
+            margin-bottom: 10px;
+        }
+        .exam-tag {
+            background-color: #f56c6c;
+        }
+        .assignment-tag {
+            background-color: #e6a23c;
+        }
+        h3 {
+            margin: 10px 0;
+            color: #333;
+        }
+        .desc {
+            color: #666;
+            margin: 10px 0;
+        }
+        .due {
+            color: #f56c6c;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <h1>重要提醒跳转功能测试</h1>
+    <p>点击下面的卡片测试跳转功能：</p>
+    
+    <div class="test-card exam-card" onclick="testJump('exam', 123)">
+        <span class="tag exam-tag">考试 · 即将截止</span>
+        <h3>期末考试 - 计算机网络原理</h3>
+        <p class="desc">本次考试包含选择题、判断题和简答题，考试时长90分钟</p>
+        <p class="due">📅 截止日期：2025-01-20</p>
+    </div>
+    
+    <div class="test-card assignment-card" onclick="testJump('assignment', 456)">
+        <span class="tag assignment-tag">作业 · 即将截止</span>
+        <h3>第三章作业 - 网络协议分析</h3>
+        <p class="desc">完成课后习题1-5，分析TCP三次握手过程</p>
+        <p class="due">📅 截止日期：2025-01-18</p>
+    </div>
+    
+    <div class="test-card exam-card" onclick="testJump('exam', 789)">
+        <span class="tag exam-tag">考试 · 即将截止</span>
+        <h3>期中考试 - 数据结构</h3>
+        <p class="desc">重点考察线性表、栈、队列等基础数据结构</p>
+        <p class="due">📅 截止日期：2025-01-22</p>
+    </div>
+    
+    <script>
+        function testJump(type, id) {
+            if (type === 'exam') {
+                // 考试类型：跳转到考试确认界面
+                console.log(`跳转到考试确认界面，考试ID: ${id}`);
+                // 实际项目中这里会使用 router.push
+                alert(`测试：跳转到考试确认界面 /exam/confirm/${id}`);
+            } else {
+                // 作业类型：跳转到答题界面
+                console.log(`跳转到作业答题界面，作业ID: ${id}`);
+                // 实际项目中这里会使用 router.push
+                alert(`测试：跳转到作业答题界面 /homework/${id}`);
+            }
+        }
+        
+        // 模拟Vue Router的跳转
+        function simulateRouterPush(route) {
+            console.log(`模拟路由跳转: ${route}`);
+            // 这里可以添加实际的跳转逻辑
+        }
+    </script>
+</body>
+</html>

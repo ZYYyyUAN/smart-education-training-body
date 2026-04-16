@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI问答服务测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .test-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 15px;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #e8f5e8;
+            border: 1px solid #d4edda;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            color: #007bff;
+            font-style: italic;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI问答服务测试</h1>
+        
+        <!-- 连接测试 -->
+        <div class="test-section">
+            <div class="test-title">1. 连接测试</div>
+            <button onclick="testConnection()">测试连接</button>
+            <div id="connectionResult"></div>
+        </div>
+        
+        <!-- 快速问题测试 -->
+        <div class="test-section">
+            <div class="test-title">2. 快速问题生成</div>
+            <input type="text" id="docType" placeholder="文档类型 (pdf, word, image, general)" value="pdf">
+            <input type="text" id="fileName" placeholder="文件名" value="测试文档.pdf">
+            <button onclick="testQuickQuestions()">生成快速问题</button>
+            <div id="quickQuestionsResult"></div>
+        </div>
+        
+        <!-- AI问答测试 -->
+        <div class="test-section">
+            <div class="test-title">3. AI智能问答 (流式)</div>
+            <textarea id="question" rows="3" placeholder="请输入问题">请总结这个文档的主要内容</textarea>
+            <textarea id="documentContent" rows="4" placeholder="文档内容">这是一份关于人工智能发展的报告。人工智能技术在近年来取得了突破性进展，特别是在机器学习、深度学习和自然语言处理领域。随着算力的提升和数据的积累，AI应用正在各行各业广泛落地，从医疗诊断到自动驾驶，从金融风控到教育教学，都能看到AI技术的身影。</textarea>
+            <input type="text" id="docName" placeholder="文档名称" value="AI发展报告.pdf">
+            <button onclick="testAIChat()">开始问答</button>
+            <div id="aiChatResult"></div>
+        </div>
+        
+        <!-- 问答历史分析测试 -->
+        <div class="test-section">
+            <div class="test-title">4. 问答历史分析</div>
+            <button onclick="testHistoryAnalysis()">分析模拟对话历史</button>
+            <div id="historyAnalysisResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';  // 如果需要指定后端地址，在这里修改
+        
+        // 测试连接
+        async function testConnection() {
+            const resultDiv = document.getElementById('connectionResult');
+            resultDiv.innerHTML = '<div class="loading">正在测试连接...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-qa/test`);
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    resultDiv.innerHTML = `<div class="result"><span class="status success">✅ 连接成功</span><br>${result.data}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error"><span class="status error">❌ 连接失败</span><br>${result.message || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error"><span class="status error">❌ 连接失败</span><br>错误: ${error.message}</div>`;
+            }
+        }
+        
+        // 测试快速问题
+        async function testQuickQuestions() {
+            const resultDiv = document.getElementById('quickQuestionsResult');
+            const docType = document.getElementById('docType').value;
+            const fileName = document.getElementById('fileName').value;
+            
+            resultDiv.innerHTML = '<div class="loading">正在生成快速问题...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-qa/quick-questions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        documentType: docType,
+                        fileName: fileName
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    const questions = result.data.map((q, i) => `${i + 1}. ${q}`).join('\n');
+                    resultDiv.innerHTML = `<div class="result"><span class="status success">✅ 生成成功</span><br>${questions}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error"><span class="status error">❌ 生成失败</span><br>${result.message || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error"><span class="status error">❌ 请求失败</span><br>错误: ${error.message}</div>`;
+            }
+        }
+        
+        // 测试AI问答
+        async function testAIChat() {
+            const resultDiv = document.getElementById('aiChatResult');
+            const question = document.getElementById('question').value;
+            const documentContent = document.getElementById('documentContent').value;
+            const docName = document.getElementById('docName').value;
+            
+            if (!question.trim()) {
+                alert('请输入问题');
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="loading">AI正在思考...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-qa/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: question,
+                        documentContent: documentContent,
+                        fileName: docName,
+                        chatHistory: []
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                // 处理流式响应
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+                
+                resultDiv.innerHTML = '<div class="result"><span class="status success">✅ AI回答中...</span><br><div id="streamContent"></div></div>';
+                const streamDiv = document.getElementById('streamContent');
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    if (chunk.trim()) {
+                        fullResponse += chunk;
+                        streamDiv.textContent = fullResponse;
+                    }
+                }
+                
+                resultDiv.innerHTML = `<div class="result"><span class="status success">✅ 回答完成</span><br>${fullResponse}</div>`;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error"><span class="status error">❌ 问答失败</span><br>错误: ${error.message}</div>`;
+            }
+        }
+        
+        // 测试历史分析
+        async function testHistoryAnalysis() {
+            const resultDiv = document.getElementById('historyAnalysisResult');
+            
+            // 模拟对话历史
+            const mockHistory = [
+                { role: 'user', content: '这个文档主要讲什么？', timestamp: new Date() },
+                { role: 'assistant', content: '这个文档主要讲述人工智能的发展现状...', timestamp: new Date() },
+                { role: 'user', content: 'AI有哪些应用场景？', timestamp: new Date() },
+                { role: 'assistant', content: 'AI的应用场景包括医疗、教育、金融...', timestamp: new Date() }
+            ];
+            
+            resultDiv.innerHTML = '<div class="loading">正在分析对话历史...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-qa/analyze-history`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chatHistory: mockHistory,
+                        documentName: 'AI发展报告.pdf'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    resultDiv.innerHTML = `<div class="result"><span class="status success">✅ 分析完成</span><br>${result.data.analysis}<br><br>总问题数: ${result.data.totalQuestions}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error"><span class="status error">❌ 分析失败</span><br>${result.message || '未知错误'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error"><span class="status error">❌ 请求失败</span><br>错误: ${error.message}</div>`;
+            }
+        }
+        
+        // 页面加载完成后自动测试连接
+        window.onload = function() {
+            console.log('AI问答服务测试页面已加载');
+            // testConnection(); // 自动测试连接
+        };
+    </script>
+</body>
+</html>

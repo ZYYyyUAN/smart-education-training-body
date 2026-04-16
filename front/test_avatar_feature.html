@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>群聊头像功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button.success {
+            background: #28a745;
+        }
+        .test-button.success:hover {
+            background: #218838;
+        }
+        .log-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .chat-simulation {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f9f9f9;
+            margin: 20px 0;
+        }
+        .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .message.mine {
+            flex-direction: row-reverse;
+        }
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #409eff, #66b1ff);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .message.mine .avatar {
+            background: linear-gradient(135deg, #07c160, #00a854);
+        }
+        .bubble {
+            max-width: 70%;
+            background: white;
+            border-radius: 18px;
+            padding: 12px 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .message.mine .bubble {
+            background: linear-gradient(135deg, #07c160, #00a854);
+            color: white;
+        }
+        .bubble .name {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .message.mine .bubble .name {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .bubble .content {
+            font-size: 14px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .bubble .time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+            text-align: right;
+        }
+        .message.mine .bubble .time {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .avatar-input {
+            margin: 10px 0;
+        }
+        .avatar-input input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>群聊头像功能测试</h1>
+    
+    <div class="test-section">
+        <h3>功能说明</h3>
+        <p>测试群聊中用户头像的显示功能：</p>
+        <ul>
+            <li>✅ 显示用户的真实头像（从数据库avatar_url字段获取）</li>
+            <li>✅ 头像加载失败时显示用户名的第一个字符</li>
+            <li>✅ 支持圆形头像显示</li>
+            <li>✅ 区分自己和他人的消息样式</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>测试操作</h3>
+        <button class="test-button" onclick="testAvatarDisplay()">测试头像显示</button>
+        <button class="test-button" onclick="testAvatarError()">测试头像加载失败</button>
+        <button class="test-button success" onclick="addMessage()">添加测试消息</button>
+        <button class="test-button" onclick="clearMessages()">清空消息</button>
+    </div>
+
+    <div class="test-section">
+        <h3>头像URL设置</h3>
+        <div class="avatar-input">
+            <label>我的头像URL:</label>
+            <input type="text" id="myAvatarUrl" placeholder="输入头像URL，例如：https://example.com/avatar.jpg" value="https://via.placeholder.com/100x100/007bff/white?text=我" />
+        </div>
+        <div class="avatar-input">
+            <label>他人头像URL:</label>
+            <input type="text" id="otherAvatarUrl" placeholder="输入头像URL，例如：https://example.com/avatar.jpg" value="https://via.placeholder.com/100x100/28a745/white?text=他" />
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>当前状态</h3>
+        <div id="status" class="status info">准备开始测试...</div>
+    </div>
+
+    <div class="chat-simulation">
+        <h3>聊天模拟</h3>
+        <div id="messages">
+            <div class="message">
+                <div class="avatar">
+                    <img src="https://via.placeholder.com/100x100/28a745/white?text=张" alt="张老师" />
+                </div>
+                <div class="bubble">
+                    <div class="name">张老师</div>
+                    <div class="content">大家好！欢迎来到课程群聊</div>
+                    <div class="time">14:30</div>
+                </div>
+            </div>
+            <div class="message mine">
+                <div class="avatar">
+                    <img src="https://via.placeholder.com/100x100/007bff/white?text=我" alt="我" />
+                </div>
+                <div class="bubble">
+                    <div class="content">老师好！</div>
+                    <div class="time">14:31</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>测试日志</h3>
+        <div id="log" class="log-area"></div>
+    </div>
+
+    <script>
+        let logElement;
+        let statusElement;
+        let messagesElement;
+
+        window.addEventListener('DOMContentLoaded', function() {
+            logElement = document.getElementById('log');
+            statusElement = document.getElementById('status');
+            messagesElement = document.getElementById('messages');
+            
+            log('测试页面已加载，开始测试头像功能...');
+        });
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = message;
+        }
+
+        function testAvatarDisplay() {
+            log('=== 测试头像显示功能 ===');
+            
+            const myAvatarUrl = document.getElementById('myAvatarUrl').value;
+            const otherAvatarUrl = document.getElementById('otherAvatarUrl').value;
+            
+            log(`我的头像URL: ${myAvatarUrl}`);
+            log(`他人头像URL: ${otherAvatarUrl}`);
+            
+            // 测试头像加载
+            const testImage = new Image();
+            testImage.onload = function() {
+                log('✅ 头像加载成功');
+                updateStatus('头像加载成功', 'success');
+            };
+            testImage.onerror = function() {
+                log('❌ 头像加载失败');
+                updateStatus('头像加载失败', 'error');
+            };
+            testImage.src = myAvatarUrl;
+            
+            log('测试完成');
+        }
+
+        function testAvatarError() {
+            log('=== 测试头像加载失败处理 ===');
+            
+            // 添加一个无效头像的消息
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = `
+                <div class="avatar">
+                    <img src="invalid-url" alt="测试用户" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                    <span style="display: none;">测</span>
+                </div>
+                <div class="bubble">
+                    <div class="name">测试用户</div>
+                    <div class="content">这是一条测试消息，头像加载失败时会显示用户名首字母</div>
+                    <div class="time">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+            
+            messagesElement.appendChild(messageDiv);
+            log('✅ 添加了头像加载失败的测试消息');
+            updateStatus('头像加载失败测试完成', 'success');
+        }
+
+        function addMessage() {
+            log('=== 添加测试消息 ===');
+            
+            const myAvatarUrl = document.getElementById('myAvatarUrl').value;
+            const otherAvatarUrl = document.getElementById('otherAvatarUrl').value;
+            const isMine = Math.random() > 0.5;
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = isMine ? 'message mine' : 'message';
+            
+            const avatarUrl = isMine ? myAvatarUrl : otherAvatarUrl;
+            const userName = isMine ? '我' : '其他用户';
+            const content = `这是第${messagesElement.children.length + 1}条测试消息`;
+            
+            messageDiv.innerHTML = `
+                <div class="avatar">
+                    <img src="${avatarUrl}" alt="${userName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                    <span style="display: none;">${userName.charAt(0)}</span>
+                </div>
+                <div class="bubble">
+                    ${!isMine ? `<div class="name">${userName}</div>` : ''}
+                    <div class="content">${content}</div>
+                    <div class="time">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+            
+            messagesElement.appendChild(messageDiv);
+            log(`✅ 添加了${isMine ? '我的' : '他人的'}测试消息`);
+            updateStatus(`添加了${isMine ? '我的' : '他人的'}测试消息`, 'success');
+        }
+
+        function clearMessages() {
+            log('=== 清空消息 ===');
+            messagesElement.innerHTML = '';
+            log('✅ 消息已清空');
+            updateStatus('消息已清空', 'info');
+        }
+    </script>
+</body>
+</html>
+

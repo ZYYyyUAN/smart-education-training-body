@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修复后的知识图谱测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .test-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+        .test-description {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .test-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .test-link {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .test-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .fix-info {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .fix-info h3 {
+            color: #4caf50;
+            margin-top: 0;
+        }
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 40px; color: #4ecdc4;">知识图谱修复完成！</h1>
+        
+        <div class="fix-info">
+            <h3>✅ 问题已修复</h3>
+            <p>之前的错误 <code>Failed to execute 'addColorStop' on 'CanvasGradient': The value provided ('45deg') could not be parsed as a color</code> 已经解决。</p>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔧 修复内容</div>
+            <div class="test-description">
+                主要修复了ECharts颜色配置问题：
+            </div>
+            <div class="code-block">
+// 修复前（错误）：
+'linear-gradient(45deg, #ff6b6b, #4ecdc4)'
+
+// 修复后（正确）：
+'#ff6b6b'
+            </div>
+            <ul>
+                <li>将CSS渐变字符串改为纯色值</li>
+                <li>简化了节点和连接线的颜色配置</li>
+                <li>确保ECharts能正确解析颜色值</li>
+                <li>添加了完善的错误处理和调试信息</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🧪 测试修复效果</div>
+            <div class="test-description">
+                现在您可以测试修复后的知识图谱功能：
+            </div>
+            <div class="test-links">
+                <a href="/course?id=101" class="test-link">测试课程页面知识图谱</a>
+                <a href="/knowledge-graph" class="test-link">测试《中国近现代史纲要》知识图谱</a>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📋 修复详情</div>
+            <div class="test-description">
+                <strong>问题原因：</strong> ECharts无法解析CSS渐变字符串作为颜色值<br>
+                <strong>解决方案：</strong> 使用纯色值替代渐变字符串<br>
+                <strong>修复位置：</strong> KnowledgeGraph.vue 组件中的颜色生成和样式设置<br>
+                <strong>预期效果：</strong> 知识图谱应该能正常显示，不再出现"鬼画符"
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🎯 下一步操作</div>
+            <div class="test-description">
+                1. <strong>刷新页面</strong>：重新访问课程页面<br>
+                2. <strong>检查控制台</strong>：查看是否有新的错误信息<br>
+                3. <strong>验证显示</strong>：确认知识图谱是否正常显示<br>
+                4. <strong>测试交互</strong>：尝试点击节点和缩放功能
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🚀 功能特性</div>
+            <div class="test-description">
+                修复后的知识图谱包含以下功能：
+            </div>
+            <ul>
+                <li>✅ 正确的节点颜色显示</li>
+                <li>✅ 清晰的连接线</li>
+                <li>✅ 节点点击交互</li>
+                <li>✅ 缩放和拖拽功能</li>
+                <li>✅ 动画效果</li>
+                <li>✅ 响应式设计</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
+

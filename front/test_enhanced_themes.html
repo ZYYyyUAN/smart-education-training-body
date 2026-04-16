@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>增强版课程页面风格切换演示</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .theme-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .theme-demo {
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .theme-demo:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .theme-demo.selected {
+            border-color: #409eff;
+            box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.2);
+        }
+        
+        /* 卡通风演示 */
+        .cartoon-demo {
+            background: linear-gradient(135deg, #fef7e0, #f8f4e6);
+        }
+        
+        .cartoon-demo .header {
+            background: linear-gradient(135deg, #ff9a9e, #fecfef);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(255, 154, 158, 0.3);
+        }
+        
+        .cartoon-demo .content {
+            background: linear-gradient(135deg, rgba(255, 182, 193, 0.9), rgba(255, 218, 185, 0.8));
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        /* 商务风演示 */
+        .business-demo {
+            background: linear-gradient(135deg, #f1f3f4, #e8eaed);
+        }
+        
+        .business-demo .header {
+            background: linear-gradient(135deg, #1e3a8a, #1e40af);
+            color: white;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(30, 58, 138, 0.4);
+            border: 2px solid #1e40af;
+            position: relative;
+        }
+        
+        .business-demo .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            border-radius: 4px;
+        }
+        
+        .business-demo .content {
+            background: #ffffff;
+            border-radius: 4px;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-left: 4px solid #1e40af;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 科技风演示 */
+        .tech-demo {
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+            color: #00ffff;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tech-demo::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .tech-demo .header {
+            background: linear-gradient(135deg, #00ffff, #ff00ff, #00ff00);
+            background-size: 200% 200%;
+            animation: techGradient 3s ease infinite;
+            color: #000;
+            border-radius: 0;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 255, 0.5),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+            border: 2px solid #00ffff;
+            position: relative;
+            z-index: 1;
+        }
+        
+        @keyframes techGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .tech-demo .content {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8), rgba(26, 26, 46, 0.9));
+            border-radius: 0;
+            padding: 20px;
+            border: 2px solid #00ffff;
+            box-shadow: 
+                0 0 30px rgba(0, 255, 255, 0.3),
+                inset 0 0 20px rgba(0, 255, 255, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 简约风演示 */
+        .minimal-demo {
+            background: #fafafa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .minimal-demo .header {
+            background: #ffffff;
+            border: none;
+            border-radius: 0;
+            padding: 20px;
+            margin-bottom: 0;
+            box-shadow: none;
+            border-bottom: 1px solid #e5e5e5;
+            color: #333;
+            text-align: center;
+            position: relative;
+        }
+        
+        .minimal-demo .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background: #000;
+        }
+        
+        .minimal-demo .content {
+            background: #ffffff;
+            border-radius: 0;
+            padding: 20px;
+            border: 1px solid #e5e5e5;
+            border-left: none;
+            box-shadow: none;
+        }
+        
+        /* 暗黑风演示 */
+        .dark-demo {
+            background: linear-gradient(135deg, #0d1117, #161b22, #21262d);
+            color: #f0f6fc;
+            position: relative;
+        }
+        
+        .dark-demo::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(88, 166, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(255, 123, 172, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .dark-demo .header {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+            color: #f0f6fc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+            border: 1px solid #30363d;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .dark-demo .content {
+            background: linear-gradient(135deg, rgba(13, 17, 23, 0.95), rgba(22, 27, 34, 0.9));
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #30363d;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .theme-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .theme-description {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .feature-list li {
+            padding: 5px 0;
+            font-size: 14px;
+        }
+        
+        .feature-list li:before {
+            content: "✓ ";
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .demo-button {
+            background: #409eff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .demo-button:hover {
+            background: #66b1ff;
+            transform: translateY(-1px);
+        }
+        
+        .instructions {
+            background: #f0f9ff;
+            border: 1px solid #b3d8ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #409eff;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .highlight h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1>🎨 增强版课程页面风格切换功能</h1>
+        
+        <div class="instructions">
+            <h3>✨ 重新设计说明</h3>
+            <p>根据您的反馈，我重新设计了各风格主题，让它们的特点更加明显和突出：</p>
+            <ul>
+                <li><strong>卡通风</strong>：保持您原有的设计不变，作为默认主题</li>
+                <li><strong>商务风</strong>：深蓝色专业风格，适合正式场合</li>
+                <li><strong>科技风</strong>：炫酷的霓虹科技感，带有动画效果</li>
+                <li><strong>简约风</strong>：极简主义设计，注重内容本身</li>
+                <li><strong>暗黑风</strong>：酷炫的深色主题，护眼舒适</li>
+            </ul>
+        </div>
+        
+        <div class="highlight">
+            <h4>🎯 主要改进</h4>
+            <ul>
+                <li>每种风格都有独特的视觉特色和交互效果</li>
+                <li>科技风添加了霓虹色彩和动画效果</li>
+                <li>商务风采用专业的深蓝色调和几何设计</li>
+                <li>简约风完全去除了装饰元素，专注内容</li>
+                <li>暗黑风使用现代深色设计，带有渐变效果</li>
+                <li>保持原有卡通风设计不变，作为默认主题</li>
+            </ul>
+        </div>
+        
+        <h2>🎭 风格主题展示</h2>
+        <div class="theme-showcase">
+            <div class="theme-demo cartoon-demo" onclick="selectTheme('cartoon')">
+                <div class="header">
+                    <h3>🎨 卡通风</h3>
+                </div>
+                <div class="content">
+                    <div class="theme-description">保持原有设计，活泼可爱的卡通风格</div>
+                    <ul class="feature-list">
+                        <li>保持您原有的设计风格</li>
+                        <li>圆润的边角和柔和色彩</li>
+                        <li>温馨的渐变背景</li>
+                        <li>适合年轻用户群体</li>
+                    </ul>
+                    <button class="demo-button" onclick="previewTheme('cartoon')">预览效果</button>
+                </div>
+            </div>
+            
+            <div class="theme-demo business-demo" onclick="selectTheme('business')">
+                <div class="header">
+                    <h3>💼 商务风</h3>
+                </div>
+                <div class="content">
+                    <div class="theme-description">专业严肃的深蓝色调，适合正式场合</div>
+                    <ul class="feature-list">
+                        <li>深蓝色专业配色方案</li>
+                        <li>几何线条和边框设计</li>
+                        <li>商务感的光影效果</li>
+                        <li>适合企业级应用</li>
+                    </ul>
+                    <button class="demo-button" onclick="previewTheme('business')">预览效果</button>
+                </div>
+            </div>
+            
+            <div class="theme-demo tech-demo" onclick="selectTheme('tech')">
+                <div class="header">
+                    <h3>🚀 科技风</h3>
+                </div>
+                <div class="content">
+                    <div class="theme-description">炫酷的霓虹科技感，带有动态效果</div>
+                    <ul class="feature-list">
+                        <li>霓虹色彩和发光效果</li>
+                        <li>动态渐变背景</li>
+                        <li>科技感的扫描动画</li>
+                        <li>适合技术类课程</li>
+                    </ul>
+                    <button class="demo-button" onclick="previewTheme('tech')">预览效果</button>
+                </div>
+            </div>
+            
+            <div class="theme-demo minimal-demo" onclick="selectTheme('minimal')">
+                <div class="header">
+                    <h3>✨ 简约风</h3>
+                </div>
+                <div class="content">
+                    <div class="theme-description">极简主义设计，完全专注内容</div>
+                    <ul class="feature-list">
+                        <li>去除所有装饰元素</li>
+                        <li>黑白配色方案</li>
+                        <li>简洁的线条设计</li>
+                        <li>专注内容本身</li>
+                    </ul>
+                    <button class="demo-button" onclick="previewTheme('minimal')">预览效果</button>
+                </div>
+            </div>
+            
+            <div class="theme-demo dark-demo" onclick="selectTheme('dark')">
+                <div class="header">
+                    <h3>🌙 暗黑风</h3>
+                </div>
+                <div class="content">
+                    <div class="theme-description">酷炫的深色主题，现代感十足</div>
+                    <ul class="feature-list">
+                        <li>深色背景减少眼疲劳</li>
+                        <li>现代渐变效果</li>
+                        <li>高对比度文字</li>
+                        <li>适合夜间使用</li>
+                    </ul>
+                    <button class="demo-button" onclick="previewTheme('dark')">预览效果</button>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <button class="demo-button" onclick="openCoursePage()" style="font-size: 16px; padding: 12px 24px;">
+                🎯 立即体验课程页面
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        function selectTheme(theme) {
+            // 移除所有选中状态
+            document.querySelectorAll('.theme-demo').forEach(demo => {
+                demo.classList.remove('selected');
+            });
+            
+            // 添加选中状态
+            event.currentTarget.classList.add('selected');
+            
+            // 保存主题选择
+            localStorage.setItem('course-theme', theme);
+            
+            // 显示提示
+            alert(`已选择 ${getThemeName(theme)} 风格！\n\n现在可以访问课程页面查看效果：\nhttp://localhost:5173/course?id=101`);
+        }
+        
+        function previewTheme(theme) {
+            // 临时应用主题到当前页面
+            document.body.className = theme;
+            
+            // 3秒后恢复
+            setTimeout(() => {
+                document.body.className = '';
+            }, 3000);
+            
+            alert(`正在预览 ${getThemeName(theme)} 风格...`);
+        }
+        
+        function getThemeName(theme) {
+            const names = {
+                cartoon: '卡通风',
+                business: '商务风',
+                tech: '科技风',
+                minimal: '简约风',
+                dark: '暗黑风'
+            };
+            return names[theme] || '未知风格';
+        }
+        
+        function openCoursePage() {
+            window.open('http://localhost:5173/course?id=101', '_blank');
+        }
+        
+        // 页面加载时检查是否有保存的主题
+        window.onload = function() {
+            const savedTheme = localStorage.getItem('course-theme');
+            if (savedTheme) {
+                const themeDemo = document.querySelector(`.theme-demo.${savedTheme}-demo`);
+                if (themeDemo) {
+                    themeDemo.classList.add('selected');
+                }
+            }
+        };
+    </script>
+</body>
+</html>

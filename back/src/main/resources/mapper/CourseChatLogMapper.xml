@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.java.ai.langchain4j.mapper.CourseChatLogMapper">
+
+    <!-- 根据课程ID查询聊天记录 -->
+    <select id="selectByCourseId" resultType="com.atguigu.java.ai.langchain4j.entity.CourseChatLog">
+        SELECT 
+            c.id,
+            c.course_id,
+            c.sender_id,
+            c.sender_name,
+            c.message,
+            c.message_type,
+            c.file_name,
+            c.file_size,
+            c.duration,
+            c.sent_at,
+            u.avatar_url as senderAvatar
+        FROM course_chat_log c
+        LEFT JOIN user u ON c.sender_id = u.id
+        WHERE c.course_id = #{courseId}
+        ORDER BY c.sent_at ASC, c.id ASC 
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <!-- 根据课程ID统计消息数量 -->
+    <select id="countByCourseId" resultType="java.lang.Long">
+        SELECT COUNT(*) 
+        FROM course_chat_log 
+        WHERE course_id = #{courseId}
+    </select>
+    
+    <!-- 根据课程ID统计不同发送者数量 -->
+    <select id="countDistinctSendersByCourseId" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT sender_name) 
+        FROM course_chat_log 
+        WHERE course_id = #{courseId}
+    </select>
+
+</mapper>

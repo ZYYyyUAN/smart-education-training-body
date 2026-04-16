@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.atguigu.java.ai.langchain4j.mapper.AssignmentQuestionMapper">
+
+    <!-- 批量插入 assignment 与 question 的关系 -->
+    <insert id="insertBatch" parameterType="map">
+        <if test="questionIds != null and questionIds.size() > 0">
+            INSERT INTO assignment_question (assignment_id, question_id)
+            VALUES
+            <foreach collection="questionIds" item="qid" separator=",">
+                (#{assignmentId}, #{qid})
+            </foreach>
+        </if>
+    </insert>
+
+    <!-- 可选：查询某个作业关联的所有题目 ID -->
+    <select id="findQuestionIdsByAssignmentId" resultType="java.lang.Long">
+        SELECT question_id
+        FROM assignment_question
+        WHERE assignment_id = #{assignmentId}
+    </select>
+
+    <!-- 可选：删除某个作业的所有题目关联 -->
+    <delete id="deleteByAssignmentId" parameterType="long">
+        DELETE FROM assignment_question
+        WHERE assignment_id = #{assignmentId}
+    </delete>
+
+
+
+</mapper>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识图谱功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .test-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #4ecdc4;
+        }
+        .test-description {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .test-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .test-link {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        .test-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .feature-list li:before {
+            content: "✓";
+            color: #4ecdc4;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .highlight {
+            background: linear-gradient(135deg, #ff6b6b, #4ecdc4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align: center; margin-bottom: 40px; color: #4ecdc4;">《中国近现代史纲要》知识图谱功能测试</h1>
+        
+        <div class="test-section">
+            <div class="test-title">🎯 功能概述</div>
+            <div class="test-description">
+                本知识图谱系统实现了《中国近现代史纲要》的章节节点展示、知识点高亮和缩放功能，为用户提供直观的知识学习体验。
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📚 第一个页面：章节节点布局</div>
+            <div class="test-description">
+                在知识图谱页面中，圆形节点代表《中国近现代史纲要》的各个章节，包括：
+            </div>
+            <ul class="feature-list">
+                <li><span class="highlight">历史是最好的教科书</span> - 点击此节点可跳转到详情页面</li>
+                <li>近代中华民族的磨难与抗争</li>
+                <li>不同社会力量对国家出路的早期探索</li>
+                <li>辛亥革命与君主专制制度的终结</li>
+                <li>中国共产党成立和中国革命新局面</li>
+                <li>中国革命的新道路</li>
+                <li>中华民族的抗日战争</li>
+                <li>为建立新中国而奋斗</li>
+                <li>中华人民共和国的成立与中国社会主义建设道路的探索</li>
+                <li>改革开放与中国特色社会主义的开创与发展</li>
+                <li>中国特色社会主义进入新时代</li>
+                <li>结语</li>
+            </ul>
+            <div class="test-links">
+                <a href="/study_space/knowledge-graph" class="test-link">进入知识图谱页面</a>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🎨 第二个页面：知识点高亮展示</div>
+            <div class="test-description">
+                当用户点击特定章节节点时，会跳转到详情页面，该章节下的知识点会自动高亮显示：
+            </div>
+            <ul class="feature-list">
+                <li>高亮节点以 <span class="highlight">橙色</span> 显示，具有更大的尺寸和阴影效果</li>
+                <li>非高亮节点会变暗，突出重要知识点</li>
+                <li>鼠标悬停时显示详细信息</li>
+                <li>右侧边栏显示章节描述和知识点资源</li>
+            </ul>
+            <div class="test-links">
+                <a href="/knowledge-detail?graphData=%7B%22name%22%3A%22历史是最好的教科书%22%2C%22id%22%3A1%2C%22children%22%3A%5B%7B%22name%22%3A%22历史是最好的教科书%22%2C%22id%22%3A1%2C%22children%22%3A%5B%7B%22id%22%3A101%2C%22name%22%3A%22历史是最好的教科书%22%7D%2C%7B%22id%22%3A102%2C%22name%22%3A%22历史是最好的老师%22%7D%2C%7B%22id%22%3A103%2C%22name%22%3A%22历史是最好的营养剂%22%7D%5D%7D%5D%7D&displayTitle=历史是最好的教科书&courseName=《中国近现代史纲要》&highlightIds=%5B101%2C102%2C103%5D" class="test-link">测试"历史是最好的教科书"详情页面</a>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔍 第三个功能：缩放展示全局与高亮保持</div>
+            <div class="test-description">
+                在详情页面中，用户可以通过多种方式进行缩放操作：
+            </div>
+            <ul class="feature-list">
+                <li>使用鼠标滚轮进行缩放</li>
+                <li>点击缩放控制按钮（放大、缩小、重置、适应视图）</li>
+                <li>拖拽移动视图位置</li>
+                <li>缩放过程中，高亮的知识点始终保持高亮状态</li>
+                <li>从局部视图逐步过渡到全局视图，完整呈现所有知识点</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🚀 技术特性</div>
+            <ul class="feature-list">
+                <li>基于 Vue 3 + ECharts 的现代化前端架构</li>
+                <li>响应式设计，支持不同屏幕尺寸</li>
+                <li>流畅的动画效果和交互体验</li>
+                <li>智能的高亮算法，确保重要知识点突出显示</li>
+                <li>完善的缩放和导航功能</li>
+                <li>优雅的视觉设计和用户体验</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📝 使用说明</div>
+            <div class="test-description">
+                <strong>步骤1：</strong> 在知识图谱页面中，您会看到12个圆形节点，每个代表一个章节<br>
+                <strong>步骤2：</strong> 点击任意节点（如"历史是最好的教科书"）进行跳转<br>
+                <strong>步骤3：</strong> 在详情页面中，该章节的知识点会自动高亮显示<br>
+                <strong>步骤4：</strong> 使用缩放控制按钮或鼠标滚轮进行缩放操作<br>
+                <strong>步骤5：</strong> 观察高亮知识点在缩放过程中的保持效果
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

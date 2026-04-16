@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.java.ai.langchain4j.mapper.PracticeRecordMapper">
+    
+    <!-- 插入练习记录 -->
+    <insert id="insertPracticeRecord" parameterType="com.atguigu.java.ai.langchain4j.entity.PracticeRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO practice_record (
+            student_id, course_id, total_questions, correct_count, wrong_count, 
+            unanswered_count, accuracy_rate, practice_type, practice_date, 
+            create_time, update_time
+        ) VALUES (
+            #{studentId}, #{courseId}, #{totalQuestions}, #{correctCount}, #{wrongCount},
+            #{unansweredCount}, #{accuracyRate}, #{practiceType}, #{practiceDate},
+            #{createTime}, #{updateTime}
+        )
+    </insert>
+    
+    <!-- 插入练习记录详情 -->
+    <insert id="insertPracticeRecordDetail" parameterType="com.atguigu.java.ai.langchain4j.entity.PracticeRecordDetail">
+        INSERT INTO practice_record_detail (
+            practice_record_id, question_id, question_type, question_content, knowledge_point,
+            user_answer, correct_answer, score, is_correct, create_time
+        ) VALUES (
+            #{practiceRecordId}, #{questionId}, #{questionType}, #{questionContent}, #{knowledgePoint},
+            #{userAnswer}, #{correctAnswer}, #{score}, #{isCorrect}, #{createTime}
+        )
+    </insert>
+    
+    <!-- 根据学生ID分页查询练习记录 -->
+    <select id="getPracticeRecordsByStudentId" resultType="com.atguigu.java.ai.langchain4j.entity.PracticeRecord">
+        SELECT 
+            id, student_id, course_id, total_questions, correct_count, wrong_count,
+            unanswered_count, accuracy_rate, practice_type, practice_date,
+            create_time, update_time
+        FROM practice_record
+        WHERE student_id = #{studentId}
+        <if test="courseId != null and courseId != ''">
+            AND course_id = #{courseId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND practice_date >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND practice_date &lt;= #{endDate}
+        </if>
+        <choose>
+            <when test="sortBy == 'date-asc'">
+                ORDER BY practice_date ASC
+            </when>
+            <when test="sortBy == 'score-desc'">
+                ORDER BY accuracy_rate DESC
+            </when>
+            <when test="sortBy == 'score-asc'">
+                ORDER BY accuracy_rate ASC
+            </when>
+            <otherwise>
+                ORDER BY practice_date DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{size}
+    </select>
+    
+    <!-- 根据学生ID查询练习记录总数 -->
+    <select id="countPracticeRecordsByStudentId" resultType="int">
+        SELECT COUNT(*)
+        FROM practice_record
+        WHERE student_id = #{studentId}
+        <if test="courseId != null and courseId != ''">
+            AND course_id = #{courseId}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND practice_date >= #{startDate}
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND practice_date &lt;= #{endDate}
+        </if>
+    </select>
+    
+    <!-- 根据练习记录ID查询详情 -->
+    <select id="getPracticeRecordDetails" resultType="com.atguigu.java.ai.langchain4j.entity.PracticeRecordDetail">
+        SELECT 
+            id, practice_record_id, question_id, question_type, question_content, knowledge_point,
+            user_answer, correct_answer, score, is_correct, create_time
+        FROM practice_record_detail
+        WHERE practice_record_id = #{practiceRecordId}
+        ORDER BY id ASC
+    </select>
+    
+</mapper> 

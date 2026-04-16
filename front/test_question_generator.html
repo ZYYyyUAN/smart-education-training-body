@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>题目生成功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .test-button {
+            background-color: #409eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .test-button:hover {
+            background-color: #66b1ff;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f9ff;
+            border: 1px solid #b3d8ff;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background-color: #fef0f0;
+            border-color: #fbc4c4;
+            color: #f56c6c;
+        }
+        .success {
+            background-color: #f0f9ff;
+            border-color: #b3d8ff;
+            color: #409eff;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group textarea {
+            height: 100px;
+        }
+        .question-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .question-number {
+            font-weight: bold;
+            color: #409eff;
+        }
+        .question-type {
+            background: #e6f7ff;
+            color: #1890ff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .question-content {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .question-answer {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .question-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .meta-tag {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>题目生成功能测试</h1>
+        
+        <div class="test-section">
+            <div class="test-title">1. 测试题库分类获取</div>
+            <button class="test-button" onclick="testGetCategories()">获取题库分类</button>
+            <div id="categoriesResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">2. 测试题目生成</div>
+            <div class="form-group">
+                <label>课程ID:</label>
+                <input type="number" id="courseId" value="101">
+            </div>
+            <div class="form-group">
+                <label>知识点 (用逗号分隔):</label>
+                <input type="text" id="knowledgePoints" placeholder="例如: 嵌入式系统基础,C语言编程">
+            </div>
+            <div class="form-group">
+                <label>题目数量:</label>
+                <input type="number" id="questionCount" value="5" min="1" max="20">
+            </div>
+            <div class="form-group">
+                <label>题库分类ID:</label>
+                <input type="number" id="categoryId" value="1">
+            </div>
+            <div class="form-group">
+                <label>题型分布 (JSON格式):</label>
+                <textarea id="questionTypeDistribution">{"choice": 3, "short_answer": 2, "programming": 0}</textarea>
+            </div>
+            <div class="form-group">
+                <label>难度分布 (JSON格式):</label>
+                <textarea id="difficultyDistribution">{"easy": 0.2, "medium": 0.5, "hard": 0.3}</textarea>
+            </div>
+            <button class="test-button" onclick="testGenerateQuestions()">生成题目</button>
+            <div id="generateResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">3. 测试单个题目生成</div>
+            <div class="form-group">
+                <label>知识点:</label>
+                <input type="text" id="singleKnowledgePoint" value="嵌入式系统基础">
+            </div>
+            <div class="form-group">
+                <label>题目类型:</label>
+                <select id="questionType">
+                    <option value="choice">选择题</option>
+                    <option value="short_answer">简答题</option>
+                    <option value="programming">编程题</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>难度等级:</label>
+                <select id="difficultyLevel">
+                    <option value="easy">简单</option>
+                    <option value="medium">中等</option>
+                    <option value="hard">困难</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testGenerateSingleQuestion()">生成单个题目</button>
+            <div id="singleResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 测试获取题库分类
+        async function testGetCategories() {
+            const resultDiv = document.getElementById('categoriesResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在获取题库分类...';
+            
+            try {
+                const response = await fetch('/question-generator/categories');
+                const data = await response.json();
+                
+                resultDiv.textContent = '题库分类获取成功:\n' + JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = '题库分类获取失败: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 测试题目生成
+        async function testGenerateQuestions() {
+            const resultDiv = document.getElementById('generateResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在生成题目...';
+            
+            try {
+                const requestData = {
+                    courseId: parseInt(document.getElementById('courseId').value),
+                    knowledgePoints: document.getElementById('knowledgePoints').value.split(',').map(kp => kp.trim()).filter(kp => kp),
+                    questionCount: parseInt(document.getElementById('questionCount').value),
+                    questionTypeDistribution: JSON.parse(document.getElementById('questionTypeDistribution').value),
+                    difficultyDistribution: JSON.parse(document.getElementById('difficultyDistribution').value),
+                    categoryId: parseInt(document.getElementById('categoryId').value),
+                    teacherId: 1
+                };
+                
+                const response = await fetch('/question-generator/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    resultDiv.textContent = '题目生成成功:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result success';
+                    
+                    // 显示题目详情
+                    if (data.data && data.data.length > 0) {
+                        displayQuestions(data.data, resultDiv);
+                    }
+                } else {
+                    resultDiv.textContent = '题目生成失败: ' + data.message;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = '题目生成请求失败: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 测试单个题目生成
+        async function testGenerateSingleQuestion() {
+            const resultDiv = document.getElementById('singleResult');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = '正在生成单个题目...';
+            
+            try {
+                const requestData = {
+                    knowledgePoint: document.getElementById('singleKnowledgePoint').value,
+                    questionType: document.getElementById('questionType').value,
+                    difficultyLevel: document.getElementById('difficultyLevel').value,
+                    categoryId: 1,
+                    teacherId: 1
+                };
+                
+                const response = await fetch('/question-generator/generate-single', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.code === 200) {
+                    resultDiv.textContent = '单个题目生成成功:\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result success';
+                    
+                    // 显示题目详情
+                    if (data.data) {
+                        displaySingleQuestion(data.data, resultDiv);
+                    }
+                } else {
+                    resultDiv.textContent = '单个题目生成失败: ' + data.message;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = '单个题目生成请求失败: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 显示题目列表
+        function displayQuestions(questions, container) {
+            const questionsHtml = questions.map((question, index) => `
+                <div class="question-item">
+                    <div class="question-header">
+                        <span class="question-number">题目 ${index + 1}</span>
+                        <span class="question-type">${getQuestionTypeName(question.type)}</span>
+                    </div>
+                    <div class="question-content">${question.content}</div>
+                    <div class="question-answer">答案: ${question.answer}</div>
+                    <div class="question-meta">
+                        <span class="meta-tag">知识点: ${question.knowledgePoint}</span>
+                        <span class="meta-tag">难度: ${getDifficultyText(question.difficultyLevel)}</span>
+                        <span class="meta-tag">时间: ${question.estimatedTimeMinutes}分钟</span>
+                        <span class="meta-tag">质量: ${question.qualityScore || 'N/A'}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML += '\n\n题目详情:\n' + questionsHtml;
+        }
+        
+        // 显示单个题目
+        function displaySingleQuestion(question, container) {
+            const questionHtml = `
+                <div class="question-item">
+                    <div class="question-header">
+                        <span class="question-number">生成的题目</span>
+                        <span class="question-type">${getQuestionTypeName(question.type)}</span>
+                    </div>
+                    <div class="question-content">${question.content}</div>
+                    <div class="question-answer">答案: ${question.answer}</div>
+                    <div class="question-meta">
+                        <span class="meta-tag">知识点: ${question.knowledgePoint}</span>
+                        <span class="meta-tag">难度: ${getDifficultyText(question.difficultyLevel)}</span>
+                        <span class="meta-tag">时间: ${question.estimatedTimeMinutes}分钟</span>
+                        <span class="meta-tag">质量: ${question.qualityScore || 'N/A'}</span>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML += '\n\n题目详情:\n' + questionHtml;
+        }
+        
+        // 工具函数
+        function getQuestionTypeName(type) {
+            const typeMap = {
+                'choice': '选择题',
+                'short_answer': '简答题',
+                'programming': '编程题'
+            };
+            return typeMap[type] || type;
+        }
+        
+        function getDifficultyText(level) {
+            const textMap = {
+                'easy': '简单',
+                'medium': '中等',
+                'hard': '困难'
+            };
+            return textMap[level] || level;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简单API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>API连接测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 测试后端连接</h3>
+        <button onclick="testBackendConnection()">测试连接</button>
+        <div id="connection-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 测试教师AI助手API</h3>
+        <button onclick="testTeacherAssistant()">测试AI助手</button>
+        <div id="assistant-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 测试用户信息</h3>
+        <button onclick="testUserInfo()">获取用户信息</button>
+        <div id="user-result" class="result"></div>
+    </div>
+
+    <script>
+        async function testBackendConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.textContent = '正在测试连接...';
+            
+            try {
+                const response = await fetch('/api/user/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token') || 'test-token'}`
+                    }
+                });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<span class="success">✅ 后端连接成功！</span>';
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ 连接失败: ${response.status} ${response.statusText}</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ 网络错误: ${error.message}</span>`;
+            }
+        }
+        
+        async function testTeacherAssistant() {
+            const resultDiv = document.getElementById('assistant-result');
+            resultDiv.textContent = '正在测试AI助手...';
+            
+            try {
+                const response = await fetch('/api/teacher-assistant', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token') || 'test-token'}`
+                    },
+                    body: JSON.stringify({
+                        memoryId: Date.now(),
+                        userMessage: '你好'
+                    })
+                });
+                
+                if (response.ok) {
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let result = '';
+                    
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        const chunk = decoder.decode(value);
+                        result += chunk;
+                        resultDiv.textContent = `✅ AI助手响应: ${result}`;
+                    }
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `<span class="error">❌ AI助手失败: ${response.status} - ${errorText}</span>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ 网络错误: ${error.message}</span>`;
+            }
+        }
+        
+        async function testUserInfo() {
+            const resultDiv = document.getElementById('user-result');
+            resultDiv.textContent = '正在获取用户信息...';
+            
+            try {
+                const currentUser = localStorage.getItem('currentUser');
+                const token = localStorage.getItem('token');
+                
+                resultDiv.innerHTML = `
+                    <span class="success">✅ 本地用户信息:</span>
+                    Token: ${token ? '已设置' : '未设置'}
+                    用户信息: ${currentUser || '未找到'}
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">❌ 获取用户信息失败: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
+

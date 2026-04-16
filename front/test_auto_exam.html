@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自动组卷测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .row {
+            display: flex;
+            gap: 20px;
+        }
+        .col {
+            flex: 1;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .question-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #495057;
+        }
+        .question-content {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .question-meta {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #007bff;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 智能组卷系统</h1>
+            <p>基于AI的自动组卷功能测试页面</p>
+        </div>
+
+        <form id="examForm">
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label for="courseId">课程ID</label>
+                        <input type="number" id="courseId" value="101" required>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label for="teacherId">教师ID</label>
+                        <input type="number" id="teacherId" value="1" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="examTitle">试卷标题</label>
+                <input type="text" id="examTitle" value="嵌入式系统基础测试" required>
+            </div>
+
+            <div class="form-group">
+                <label for="examDescription">试卷描述</label>
+                <textarea id="examDescription" rows="3" placeholder="请输入试卷描述...">基于嵌入式系统基础知识的综合测试</textarea>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label for="totalQuestions">总题数</label>
+                        <input type="number" id="totalQuestions" value="20" min="5" max="100" required>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label for="timeLimit">考试时长(分钟)</label>
+                        <input type="number" id="timeLimit" value="90" min="30" max="300" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label for="choiceCount">选择题数量</label>
+                        <input type="number" id="choiceCount" value="10" min="0" required>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label for="shortAnswerCount">简答题数量</label>
+                        <input type="number" id="shortAnswerCount" value="7" min="0" required>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label for="programmingCount">编程题数量</label>
+                        <input type="number" id="programmingCount" value="3" min="0" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <button type="button" class="btn" onclick="generateExam()">🤖 智能组卷</button>
+                <button type="button" class="btn btn-success" onclick="quickGenerate()">⚡ 快速组卷</button>
+                <button type="button" class="btn" onclick="previewExam()">👁️ 预览试卷</button>
+            </div>
+        </form>
+
+        <div id="result" class="result" style="display: none;">
+            <h3>组卷结果</h3>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentExamId = null;
+
+        // 智能组卷
+        async function generateExam() {
+            const formData = {
+                courseId: parseInt(document.getElementById('courseId').value),
+                teacherId: parseInt(document.getElementById('teacherId').value),
+                examTitle: document.getElementById('examTitle').value,
+                examDescription: document.getElementById('examDescription').value,
+                totalQuestions: parseInt(document.getElementById('totalQuestions').value),
+                timeLimitMinutes: parseInt(document.getElementById('timeLimit').value),
+                questionDistribution: {
+                    choice: parseInt(document.getElementById('choiceCount').value),
+                    short_answer: parseInt(document.getElementById('shortAnswerCount').value),
+                    programming: parseInt(document.getElementById('programmingCount').value)
+                },
+                difficultyDistribution: {
+                    easy: 0.2,
+                    medium: 0.5,
+                    hard: 0.3
+                },
+                knowledgePointWeights: {},
+                generationStrategy: "AI智能组卷"
+            };
+
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/auto-exam/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    currentExamId = result.data.id;
+                    showResult('组卷成功！', result.data);
+                } else {
+                    showError('组卷失败：' + result.message);
+                }
+            } catch (error) {
+                showError('请求失败：' + error.message);
+            }
+        }
+
+        // 快速组卷
+        async function quickGenerate() {
+            const courseId = parseInt(document.getElementById('courseId').value);
+            const teacherId = parseInt(document.getElementById('teacherId').value);
+            const examTitle = document.getElementById('examTitle').value;
+            const totalQuestions = parseInt(document.getElementById('totalQuestions').value);
+
+            showLoading();
+            
+            try {
+                const response = await fetch(`/api/auto-exam/quick-generate?courseId=${courseId}&teacherId=${teacherId}&examTitle=${encodeURIComponent(examTitle)}&totalQuestions=${totalQuestions}`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    currentExamId = result.data.id;
+                    showResult('快速组卷成功！', result.data);
+                } else {
+                    showError('快速组卷失败：' + result.message);
+                }
+            } catch (error) {
+                showError('请求失败：' + error.message);
+            }
+        }
+
+        // 预览试卷
+        async function previewExam() {
+            if (!currentExamId) {
+                showError('请先生成试卷');
+                return;
+            }
+
+            showLoading();
+            
+            try {
+                const response = await fetch(`/api/auto-exam/preview/${currentExamId}`);
+                const result = await response.json();
+                
+                if (result.code === 200) {
+                    showExamPreview(result.data);
+                } else {
+                    showError('预览失败：' + result.message);
+                }
+            } catch (error) {
+                showError('请求失败：' + error.message);
+            }
+        }
+
+        // 显示加载状态
+        function showLoading() {
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('resultContent').innerHTML = '<div class="loading">🔄 正在处理中，请稍候...</div>';
+        }
+
+        // 显示结果
+        function showResult(title, data) {
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('resultContent').innerHTML = `
+                <h4>${title}</h4>
+                <p><strong>试卷ID：</strong>${data.id}</p>
+                <p><strong>试卷标题：</strong>${data.examTitle}</p>
+                <p><strong>生成策略：</strong>${data.generationStrategy}</p>
+                <p><strong>状态：</strong>${data.status}</p>
+                <p><strong>创建时间：</strong>${new Date(data.createdAt).toLocaleString()}</p>
+            `;
+        }
+
+        // 显示试卷预览
+        function showExamPreview(data) {
+            document.getElementById('result').style.display = 'block';
+            let html = `
+                <h4>📋 试卷预览</h4>
+                <p><strong>试卷标题：</strong>${data.examTitle}</p>
+                <p><strong>总题数：</strong>${data.totalQuestions}</p>
+                <p><strong>考试时长：</strong>${data.timeLimitMinutes}分钟</p>
+                <p><strong>质量评分：</strong>${data.qualityScore || '未评估'}</p>
+                <hr>
+                <h5>📝 题目列表</h5>
+            `;
+
+            if (data.questions && data.questions.length > 0) {
+                data.questions.forEach((question, index) => {
+                    html += `
+                        <div class="question-item">
+                            <div class="question-header">
+                                <span>第${index + 1}题</span>
+                                <span>${getQuestionTypeName(question.type)}</span>
+                                <span>难度: ${question.difficultyLevel}/5</span>
+                                <span>预计: ${question.estimatedTimeMinutes}分钟</span>
+                            </div>
+                            <div class="question-content">${question.content}</div>
+                            <div class="question-meta">
+                                <strong>知识点：</strong>${question.knowledgePoint || '未指定'}<br>
+                                <strong>AI选择原因：</strong>${question.aiSelectionReason || '未说明'}
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<p>暂无题目</p>';
+            }
+
+            document.getElementById('resultContent').innerHTML = html;
+        }
+
+        // 显示错误
+        function showError(message) {
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('resultContent').innerHTML = `<div class="error">❌ ${message}</div>`;
+        }
+
+        // 获取题型名称
+        function getQuestionTypeName(type) {
+            const typeMap = {
+                'choice': '选择题',
+                'short_answer': '简答题',
+                'programming': '编程题'
+            };
+            return typeMap[type] || type;
+        }
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('自动组卷测试页面已加载');
+        });
+    </script>
+</body>
+</html>

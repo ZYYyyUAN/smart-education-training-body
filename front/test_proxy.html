@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vite代理测试</title>
+</head>
+<body>
+    <h1>Vite代理测试页面</h1>
+    <p>这个页面用来测试Vite代理是否正常工作</p>
+    
+    <h2>测试1: 直接请求后端</h2>
+    <button onclick="testDirectBackend()">测试直接请求后端</button>
+    <div id="result1"></div>
+    
+    <h2>测试2: 通过Vite代理请求</h2>
+    <button onclick="testViteProxy()">测试Vite代理</button>
+    <div id="result2"></div>
+    
+    <h2>测试3: 登录接口测试</h2>
+    <button onclick="testLogin()">测试登录接口</button>
+    <div id="result3"></div>
+    
+    <script>
+        // 测试1: 直接请求后端
+        async function testDirectBackend() {
+            const resultDiv = document.getElementById('result1');
+            resultDiv.innerHTML = '正在测试...';
+            
+            try {
+                const response = await fetch('http://localhost:8080/auth/test');
+                const data = await response.text();
+                resultDiv.innerHTML = `<p style="color: green;">✅ 成功: ${data}</p>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ 失败: ${error.message}</p>`;
+            }
+        }
+        
+        // 测试2: 通过Vite代理请求
+        async function testViteProxy() {
+            const resultDiv = document.getElementById('result2');
+            resultDiv.innerHTML = '正在测试...';
+            
+            try {
+                const response = await fetch('/api/auth/test');
+                const data = await response.text();
+                resultDiv.innerHTML = `<p style="color: green;">✅ 成功: ${data}</p>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ 失败: ${error.message}</p>`;
+            }
+        }
+        
+        // 测试3: 登录接口测试
+        async function testLogin() {
+            const resultDiv = document.getElementById('result3');
+            resultDiv.innerHTML = '正在测试...';
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'test',
+                        password: 'test'
+                    })
+                });
+                const data = await response.text();
+                resultDiv.innerHTML = `<p style="color: green;">✅ 成功: ${data}</p>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ 失败: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

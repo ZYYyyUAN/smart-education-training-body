@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.atguigu.java.ai.langchain4j.mapper.AutoExamQuestionMapper">
+
+    <resultMap id="BaseResultMap" type="com.atguigu.java.ai.langchain4j.entity.AutoExamQuestion">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="exam_id" property="examId" jdbcType="BIGINT"/>
+        <result column="question_bank_id" property="questionBankId" jdbcType="BIGINT"/>
+        <result column="question_order" property="questionOrder" jdbcType="INTEGER"/>
+        <result column="section_type" property="sectionType" jdbcType="VARCHAR"/>
+        <result column="difficulty_level" property="difficultyLevel" jdbcType="INTEGER"/>
+        <result column="knowledge_point_id" property="knowledgePointId" jdbcType="BIGINT"/>
+        <result column="ai_selection_reason" property="aiSelectionReason" jdbcType="VARCHAR"/>
+        <result column="estimated_time_minutes" property="estimatedTimeMinutes" jdbcType="INTEGER"/>
+        <result column="created_at" property="createdAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <select id="selectByExamId" resultMap="BaseResultMap">
+        SELECT * FROM auto_exam_question
+        WHERE exam_id = #{examId}
+        ORDER BY question_order ASC
+    </select>
+
+    <select id="selectByQuestionBankId" resultMap="BaseResultMap">
+        SELECT * FROM auto_exam_question
+        WHERE question_bank_id = #{questionBankId}
+    </select>
+
+    <delete id="deleteByExamId">
+        DELETE FROM auto_exam_question
+        WHERE exam_id = #{examId}
+    </delete>
+
+    <delete id="deleteByQuestionBankId">
+        DELETE FROM auto_exam_question
+        WHERE question_bank_id = #{questionBankId}
+    </delete>
+
+    <delete id="deleteByExamAndQuestion">
+        DELETE FROM auto_exam_question
+        WHERE exam_id = #{examId} AND question_bank_id = #{questionBankId}
+    </delete>
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO auto_exam_question (exam_id, question_bank_id, question_order, section_type, 
+                                       difficulty_level, knowledge_point_id, ai_selection_reason, 
+                                       estimated_time_minutes, created_at)
+        VALUES
+        <foreach collection="questions" item="item" separator=",">
+            (#{item.examId}, #{item.questionBankId}, #{item.questionOrder}, #{item.sectionType},
+             #{item.difficultyLevel}, #{item.knowledgePointId}, #{item.aiSelectionReason},
+             #{item.estimatedTimeMinutes}, #{item.createdAt})
+        </foreach>
+    </insert>
+
+    <update id="updateQuestionOrder">
+        UPDATE auto_exam_question SET question_order = #{questionOrder}
+        WHERE id = #{id}
+    </update>
+
+</mapper>
