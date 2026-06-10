@@ -13,10 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Tag(name = "登录记录管理")
 @RestController
@@ -75,24 +72,26 @@ public class LoginLogController {
     @GetMapping("/student/recent")
     public Result<List<StudentLoginLog>> getRecentStudentLogins(
             @RequestParam(defaultValue = "10") int limit) {
-        
+
         QueryWrapper<StudentLoginLog> queryWrapper = new QueryWrapper<>();
-        queryWrapper.orderByDesc("login_time").last("LIMIT " + limit);
-        
-        List<StudentLoginLog> logs = studentLoginLogMapper.selectList(queryWrapper);
-        return Result.ok(logs);
+        queryWrapper.orderByDesc("login_time");
+
+        Page<StudentLoginLog> page = new Page<>(1, Math.max(1, limit));
+        Page<StudentLoginLog> result = studentLoginLogMapper.selectPage(page, queryWrapper);
+        return Result.ok(result.getRecords());
     }
 
     @Operation(summary = "获取最近的老师登录记录")
     @GetMapping("/teacher/recent")
     public Result<List<TeacherLoginLog>> getRecentTeacherLogins(
             @RequestParam(defaultValue = "10") int limit) {
-        
+
         QueryWrapper<TeacherLoginLog> queryWrapper = new QueryWrapper<>();
-        queryWrapper.orderByDesc("login_time").last("LIMIT " + limit);
-        
-        List<TeacherLoginLog> logs = teacherLoginLogMapper.selectList(queryWrapper);
-        return Result.ok(logs);
+        queryWrapper.orderByDesc("login_time");
+
+        Page<TeacherLoginLog> page = new Page<>(1, Math.max(1, limit));
+        Page<TeacherLoginLog> result = teacherLoginLogMapper.selectPage(page, queryWrapper);
+        return Result.ok(result.getRecords());
     }
 
     @Operation(summary = "统计学生周一到周日的登录次数")

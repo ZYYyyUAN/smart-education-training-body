@@ -6,12 +6,12 @@ import com.atguigu.java.ai.langchain4j.mapper.UserMapper;
 import com.atguigu.java.ai.langchain4j.service.PracticeRecordService;
 import com.atguigu.java.ai.langchain4j.service.StudentLoginLogService;
 import com.atguigu.java.ai.langchain4j.service.StudyScoreService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
@@ -82,7 +82,7 @@ public class StudyScoreServiceImpl implements StudyScoreService {
         try {
             // 获取所有学生
             List<User> students = userMapper.selectList(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<User>()
+                new LambdaQueryWrapper<User>()
                     .eq(User::getRole, "student")
             );
 
@@ -144,7 +144,8 @@ public class StudyScoreServiceImpl implements StudyScoreService {
     /**
      * 计算活跃天数（有登录记录的天数）
      */
-    private int calculateActiveDays(List<Map<String, Object>> loginData) {
+    @Override
+    public int calculateActiveDays(List<Map<String, Object>> loginData) {
         try {
             if (loginData == null || loginData.isEmpty()) {
                 return 0;
@@ -170,7 +171,8 @@ public class StudyScoreServiceImpl implements StudyScoreService {
     /**
      * 计算连续登录奖励（每5天额外+10分）
      */
-    private int calculateConsecutiveLoginBonus(List<Map<String, Object>> loginData) {
+    @Override
+    public int calculateConsecutiveLoginBonus(List<Map<String, Object>> loginData) {
         try {
             if (loginData == null || loginData.isEmpty()) {
                 return 0;
@@ -225,13 +227,12 @@ public class StudyScoreServiceImpl implements StudyScoreService {
     @Override
     public List<Map<String, Object>> getOverallLeaderboard(int limit) {
         try {
-            // 查询所有学生，按 study_score 降序
-            List<User> students = userMapper.selectList(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<User>()
+            LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
                     .eq(User::getRole, "student")
-                    .orderByDesc(User::getStudyScore)
-                    .last(limit > 0 ? "LIMIT " + limit : "")
-            );
+                    .orderByDesc(User::getStudyScore);
+            Page<User> pageReq = new Page<>(1, Math.max(1, limit));
+            Page<User> pageResult = userMapper.selectPage(pageReq, wrapper);
+            List<User> students = pageResult.getRecords();
 
             List<Map<String, Object>> leaderboard = new ArrayList<>();
             for (int i = 0; i < students.size(); i++) {

@@ -60,7 +60,7 @@
         ORDER BY qb.id
     </select>
 
-    <select id="selectByIds" resultType="com.atguigu.java.ai.langchain4j.entity.QuestionBank">
+    <select id="selectByIdList" resultType="com.atguigu.java.ai.langchain4j.entity.QuestionBank">
         SELECT * FROM question_bank 
         WHERE id IN 
         <foreach collection="ids" item="id" open="(" separator="," close=")">

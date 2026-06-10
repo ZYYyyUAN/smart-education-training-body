@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.UUID;
 
 @Component
@@ -36,5 +38,27 @@ public class AliyunOssUtil {
         ossClient.shutdown();
 
         return url;
+    }
+
+    public void downloadToFile(String ossUrl, java.io.File targetFile) throws IOException {
+        // 截取 object key：URL = https://bucket.endpoint/objectKey
+        String urlPrefix = "https://" + ossProperties.getBucketName() + "." + ossProperties.getEndpoint() + "/";
+        if (!ossUrl.startsWith(urlPrefix)) {
+            throw new IOException("OSS URL 格式不匹配: " + ossUrl);
+        }
+        String objectKey = ossUrl.substring(urlPrefix.length());
+
+        OSS ossClient = new OSSClientBuilder().build(
+                ossProperties.getEndpoint(),
+                ossProperties.getAccessKeyId(),
+                ossProperties.getAccessKeySecret()
+        );
+
+        try (InputStream in = ossClient.getObject(ossProperties.getBucketName(), objectKey).getObjectContent();
+             java.io.FileOutputStream out = new java.io.FileOutputStream(targetFile)) {
+            in.transferTo(out);
+        } finally {
+            ossClient.shutdown();
+        }
     }
 }

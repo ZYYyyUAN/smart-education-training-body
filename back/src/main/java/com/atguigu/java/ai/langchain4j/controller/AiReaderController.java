@@ -11,19 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Flux;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map;
-import com.atguigu.java.ai.langchain4j.service.XunfeiOCRService;
-import com.atguigu.java.ai.langchain4j.service.XunfeiOCRServiceSimple;
-import com.atguigu.java.ai.langchain4j.service.XunfeiOCRServiceFinal;
-import com.atguigu.java.ai.langchain4j.service.XunfeiOCRServiceUltraSimple;
-import com.atguigu.java.ai.langchain4j.service.XunfeiOCRServiceCorrect;
-import com.atguigu.java.ai.langchain4j.service.XunfeiOCRServiceMinimal;
 import com.atguigu.java.ai.langchain4j.service.XunfeiOCRServiceOfficial;
 import org.apache.commons.codec.binary.Base64;
 
@@ -35,25 +24,7 @@ public class AiReaderController {
 
     @Autowired
     private XiaozhiAgent xiaozhiAgent;
-    
-    @Autowired
-    private XunfeiOCRService xunfeiOCRService;
-    
-    @Autowired
-    private XunfeiOCRServiceSimple xunfeiOCRServiceSimple;
-    
-    @Autowired
-    private XunfeiOCRServiceFinal xunfeiOCRServiceFinal;
-    
-    @Autowired
-    private XunfeiOCRServiceUltraSimple xunfeiOCRServiceUltraSimple;
-    
-    @Autowired
-    private XunfeiOCRServiceCorrect xunfeiOCRServiceCorrect;
-    
-    @Autowired
-    private XunfeiOCRServiceMinimal xunfeiOCRServiceMinimal;
-    
+
     @Autowired
     private XunfeiOCRServiceOfficial xunfeiOCRServiceOfficial;
 
@@ -211,42 +182,27 @@ public class AiReaderController {
     @PostMapping(value = "/ocr", consumes = "multipart/form-data", produces = "application/json")
     public ResponseEntity<Map<String, Object>> performOCR(@RequestParam("image") MultipartFile image) {
         log.info("OCR接口被调用，文件名: {}", image.getOriginalFilename());
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
-            // 检查文件类型
-            String contentType = image.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                response.put("success", false);
-                response.put("message", "请上传有效的图片文件");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            // 检查文件大小（科大讯飞限制4MB）
-            if (image.getSize() > 4 * 1024 * 1024) {
-                response.put("success", false);
-                response.put("message", "图片文件过大，请上传小于4MB的图片");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            // 将图片转换为Base64编码
-            byte[] imageBytes = image.getBytes();
-            String imageBase64 = Base64.encodeBase64String(imageBytes);
-            
-            log.info("图片已转换为Base64，大小: {} bytes", imageBytes.length);
-            
-            // 调用科大讯飞OCR服务识别文字 - 使用官方Demo版本
+            String imageBase64 = validateImageAndEncode(image);
+            log.info("图片已转换为Base64");
+
             String ocrText = xunfeiOCRServiceOfficial.performOCR(imageBase64);
-            
+
             response.put("success", true);
             response.put("text", ocrText);
             response.put("message", "OCR识别成功");
-            
             log.info("OCR识别完成，识别文字长度: {}", ocrText.length());
-            
+
             return ResponseEntity.ok(response);
-            
+
+        } catch (IllegalArgumentException e) {
+            log.warn("图片校验失败: {}", e.getMessage());
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             log.error("OCR识别失败", e);
             response.put("success", false);
@@ -263,35 +219,23 @@ public class AiReaderController {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            String contentType = image.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                response.put("success", false);
-                response.put("message", "请上传有效的图片文件");
-                return ResponseEntity.badRequest().body(response);
-            }
+            String imageBase64 = validateImageAndEncode(image);
+            log.info("图片已转换为Base64");
 
-            if (image.getSize() > 4 * 1024 * 1024) { // iFlytek limit
-                response.put("success", false);
-                response.put("message", "图片文件过大，请上传小于4MB的图片");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            byte[] imageBytes = image.getBytes();
-            String imageBase64 = Base64.encodeBase64String(imageBytes);
-
-            log.info("图片已转换为Base64，大小: {} bytes", imageBytes.length);
-
-            // 调用科大讯飞OCR服务识别文字 - 返回完整JSON结果
             String ocrResult = xunfeiOCRServiceOfficial.performOCRWithCoordinates(imageBase64);
-            
+
             response.put("success", true);
             response.put("result", ocrResult);
             response.put("message", "OCR识别成功");
-
             log.info("OCR识别完成，返回完整结果");
 
             return ResponseEntity.ok(response);
 
+        } catch (IllegalArgumentException e) {
+            log.warn("图片校验失败: {}", e.getMessage());
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             log.error("OCR识别失败", e);
             response.put("success", false);
@@ -299,6 +243,22 @@ public class AiReaderController {
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
+    /**
+     * 校验图片文件类型和大小，返回Base64编码字符串
+     */
+    private String validateImageAndEncode(MultipartFile image) throws Exception {
+        String contentType = image.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("请上传有效的图片文件");
+        }
+        if (image.getSize() > 4 * 1024 * 1024) {
+            throw new IllegalArgumentException("图片文件过大，请上传小于4MB的图片");
+        }
+        byte[] imageBytes = image.getBytes();
+        String imageBase64 = Base64.encodeBase64String(imageBytes);
+        log.info("图片已转换为Base64，大小: {} bytes", imageBytes.length);
+        return imageBase64;
+    }
 
 }

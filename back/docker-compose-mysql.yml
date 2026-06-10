@@ -7,10 +7,10 @@ services:
     container_name: smart-education-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root123456
-      MYSQL_DATABASE: xiaozhi
-      MYSQL_USER: xiaozhi
-      MYSQL_PASSWORD: xiaozhi123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-xiaozhi}
+      MYSQL_USER: ${MYSQL_USER:-xiaozhi}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-xiaozhi123}
     ports:
       - "3306:3306"
     volumes:

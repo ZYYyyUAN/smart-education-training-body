@@ -40,4 +40,14 @@ public interface StudyScoreService {
      * 获取全站总排行榜（所有学生，按 study_score 降序）
      */
     List<Map<String, Object>> getOverallLeaderboard(int limit);
+
+    /**
+     * 计算活跃天数（有登录记录的天数）
+     */
+    int calculateActiveDays(java.util.List<Map<String, Object>> loginData);
+
+    /**
+     * 计算连续登录奖励（每5天额外+10分）
+     */
+    int calculateConsecutiveLoginBonus(java.util.List<Map<String, Object>> loginData);
 }

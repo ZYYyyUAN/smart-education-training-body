@@ -17,9 +17,12 @@ import java.util.concurrent.TimeUnit;
 public class IatModelZhMain extends WebSocketListener {
 
     private static final String hostUrl = "https://iat.xf-yun.com/v1";
-    private static final String appid = "0c4a31f7";   // 你的appid
-    private static final String apiSecret = "NDQ1YWEwYWJlMzU2ZjNhYWEyN2M0YWMw"; // 你的apiSecret
-    private static final String apiKey = "e62a7fb9f6df329179a58312aa13a418";  // 你的apiKey
+    private static final String appid = System.getenv().getOrDefault("XFYUN_IAT_APP_ID",
+            System.getProperty("xfyun.iat.app-id", "0c4a31f7"));
+    private static final String apiSecret = System.getenv().getOrDefault("XFYUN_IAT_API_SECRET",
+            System.getProperty("xfyun.iat.api-secret", "NDQ1YWEwYWJlMzU2ZjNhYWEyN2M0YWMw"));
+    private static final String apiKey = System.getenv().getOrDefault("XFYUN_IAT_API_KEY",
+            System.getProperty("xfyun.iat.api-key", "e62a7fb9f6df329179a58312aa13a418"));
 
     private static final Gson gson = new Gson();
 

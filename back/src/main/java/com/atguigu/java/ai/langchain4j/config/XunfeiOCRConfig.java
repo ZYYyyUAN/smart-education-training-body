@@ -15,17 +15,17 @@ public class XunfeiOCRConfig {
     /**
      * 科大讯飞APPID
      */
-    private String appId = "7bbdbf61";
+    private String appId;
     
     /**
      * 科大讯飞APIKey
      */
-    private String apiKey = "2767e52f178a3a51fffcaf59938b7cbf";
+    private String apiKey;
     
     /**
      * 科大讯飞APISecret
      */
-    private String apiSecret = "YWRlMTg2YjM5MGI4YWVlYjllZjJhZTc0";
+    private String apiSecret;
     
     /**
      * OCR接口地址

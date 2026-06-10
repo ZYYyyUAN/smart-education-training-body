@@ -567,181 +567,89 @@ public class ClassAnalysisServiceImpl implements ClassAnalysisService {
      */
     @Override
     public Map<String, Object> getHomeworkCompletionRate(Long classId, Long courseId) {
-        Map<String, Object> result = new HashMap<>();
-        
-        if (courseId == null) {
-            // 如果courseId为null，返回所有课程的平均完成率
-            // 获取班级所有学生的选课情况
-            List<Map<String, Object>> courseDistribution = studentCourseMapper.getCourseDistributionByClassId(classId);
-            if (courseDistribution == null || courseDistribution.isEmpty()) {
-                result.put("completionRate", 0.0);
-                result.put("totalAssignments", 0);
-                result.put("totalStudents", 0);
-                result.put("submittedCount", 0);
-                return result;
-            }
-            
-            // 计算所有课程的总完成率
-            long totalDenominator = 0;
-            long totalSubmitted = 0;
-            
-            // 遍历每个课程，递归计算完成率并汇总
-            for (Map<String, Object> courseInfo : courseDistribution) {
-                Long cId = ((Number) courseInfo.get("courseId")).longValue();
-                Map<String, Object> courseRate = getHomeworkCompletionRate(classId, cId);
-                totalDenominator += ((Number) courseRate.get("denominator")).longValue();
-                totalSubmitted += ((Number) courseRate.get("submittedCount")).longValue();
-            }
-            
-            // 计算总体完成率
-            double completionRate = totalDenominator > 0 ? (double) totalSubmitted / totalDenominator * 100 : 0.0;
-            result.put("completionRate", completionRate);
-            result.put("totalAssignments", courseDistribution.size());
-            result.put("totalStudents", getStudentsByClassId(classId).size());
-            result.put("submittedCount", totalSubmitted);
-            result.put("denominator", totalDenominator);
-            return result;
-        }
-        
-        // 1. 查询该课程下的作业数量
-        QueryWrapper<Assignment> assignQw = new QueryWrapper<>();
-        assignQw.eq("course_id", courseId);
-        int assignmentCount = assignmentMapper.selectCount(assignQw).intValue();
-        
-        // 2. 查询班级中选该课程的学生数量（通过student_course表，使用SQL直接统计）
-        Long studentCount = studentCourseMapper.countStudentsByClassAndCourse(classId, courseId);
-        if (studentCount == null) {
-            studentCount = 0L;
-        }
-        
-        // 如果学生数为0或作业数为0，直接返回0完成率
-        if (studentCount == 0 || assignmentCount == 0) {
-            result.put("completionRate", 0.0);
-            result.put("totalAssignments", assignmentCount);
-            result.put("totalStudents", studentCount.intValue());
-            result.put("submittedCount", 0);
-            result.put("denominator", 0);
-            return result;
-        }
-        
-        // 3. 计算分母：作业数量 × 选该课程的学生数量
-        long denominator = (long) assignmentCount * studentCount;
-        
-        // 4. 计算分子：该班级选该课程的学生提交的作业数量
-        Long submittedCount = assignmentSubmissionMapper.countSubmissionsByClassAndCourse(classId, courseId);
-        if (submittedCount == null) {
-            submittedCount = 0L;
-        }
-        
-        // 5. 计算完成率
-        double completionRate = denominator > 0 ? (double) submittedCount / denominator * 100 : 0.0;
-        
-        result.put("completionRate", completionRate);
-        result.put("totalAssignments", assignmentCount);
-        result.put("totalStudents", studentCount.intValue());
-        result.put("submittedCount", submittedCount);
-        result.put("denominator", denominator);
-        
-        return result;
+        return calcCompletionRate(classId, courseId, "totalAssignments",
+                cid -> assignmentMapper.selectCount(
+                    new QueryWrapper<Assignment>().eq("course_id", cid)).intValue(),
+                (clId, cId) -> assignmentSubmissionMapper.countSubmissionsByClassAndCourse(clId, cId),
+                (clId, cId) -> getHomeworkCompletionRate(clId, cId));
     }
 
     /**
-     * 计算班级考试完成率
-     * 
-     * 完成率计算公式：完成率 = (已提交考试数) / (考试总数 × 选课学生数) × 100%
-     * 
-     * 如果courseId为null，则计算所有课程的平均完成率：
-     * - 遍历班级所有学生的选课情况
-     * - 对每个课程分别计算完成率
-     * - 汇总所有课程的完成情况，计算总体完成率
-     * 
-     * @param classId 班级ID
-     * @param courseId 课程ID，如果为null则计算所有课程的平均完成率
-     * @return 包含完成率统计信息的Map，包含以下字段：
-     *         - completionRate: 完成率（百分比，double类型）
-     *         - totalExams: 考试总数（int类型）
-     *         - totalStudents: 选课学生总数（int类型）
-     *         - submittedCount: 已提交考试数（long类型）
-     *         - denominator: 分母（考试总数 × 选课学生数，long类型）
+     * 计算班级考试完成率，公式及courseId=null聚合逻辑同作业完成率
      */
     @Override
     public Map<String, Object> getExamCompletionRate(Long classId, Long courseId) {
+        return calcCompletionRate(classId, courseId, "totalExams",
+                cid -> examMapper.selectCount(
+                    new QueryWrapper<Exam>().eq("course_id", cid)).intValue(),
+                (clId, cId) -> examSubmissionMapper.countSubmissionsByClassAndCourse(clId, cId),
+                (clId, cId) -> getExamCompletionRate(clId, cId));
+    }
+
+    /**
+     * 计算完成率通用逻辑：courseId==null 时遍历所有课程递归汇总，否则按单课程公式计算
+     */
+    private Map<String, Object> calcCompletionRate(Long classId, Long courseId,
+            String itemCountKey,
+            java.util.function.Function<Long, Integer> itemCountFn,
+            java.util.function.BiFunction<Long, Long, Long> submissionCountFn,
+            java.util.function.BiFunction<Long, Long, Map<String, Object>> recurseFn) {
+
         Map<String, Object> result = new HashMap<>();
-        
+
         if (courseId == null) {
-            // 如果courseId为null，返回所有课程的平均完成率
-            // 获取班级所有学生的选课情况
             List<Map<String, Object>> courseDistribution = studentCourseMapper.getCourseDistributionByClassId(classId);
             if (courseDistribution == null || courseDistribution.isEmpty()) {
                 result.put("completionRate", 0.0);
-                result.put("totalExams", 0);
+                result.put(itemCountKey, 0);
                 result.put("totalStudents", 0);
                 result.put("submittedCount", 0);
                 return result;
             }
-            
-            // 计算所有课程的总完成率
-            long totalDenominator = 0;
-            long totalSubmitted = 0;
-            
-            // 遍历每个课程，递归计算完成率并汇总
+
+            long totalDenominator = 0, totalSubmitted = 0;
             for (Map<String, Object> courseInfo : courseDistribution) {
                 Long cId = ((Number) courseInfo.get("courseId")).longValue();
-                Map<String, Object> courseRate = getExamCompletionRate(classId, cId);
+                Map<String, Object> courseRate = recurseFn.apply(classId, cId);
                 totalDenominator += ((Number) courseRate.get("denominator")).longValue();
                 totalSubmitted += ((Number) courseRate.get("submittedCount")).longValue();
             }
-            
-            // 计算总体完成率
+
             double completionRate = totalDenominator > 0 ? (double) totalSubmitted / totalDenominator * 100 : 0.0;
             result.put("completionRate", completionRate);
-            result.put("totalExams", courseDistribution.size());
+            result.put(itemCountKey, courseDistribution.size());
             result.put("totalStudents", getStudentsByClassId(classId).size());
             result.put("submittedCount", totalSubmitted);
             result.put("denominator", totalDenominator);
             return result;
         }
-        
-        // 1. 查询该课程下的考试数量
-        QueryWrapper<Exam> examQw = new QueryWrapper<>();
-        examQw.eq("course_id", courseId);
-        int examCount = examMapper.selectCount(examQw).intValue();
-        
-        // 2. 查询班级中选该课程的学生数量（通过student_course表，使用SQL直接统计）
-        Long studentCount = studentCourseMapper.countStudentsByClassAndCourse(classId, courseId);
-        if (studentCount == null) {
-            studentCount = 0L;
-        }
-        
-        // 如果学生数为0或考试数为0，直接返回0完成率
-        if (studentCount == 0 || examCount == 0) {
+
+        int itemCount = itemCountFn.apply(courseId);
+        Long studentCount = nvl(studentCourseMapper.countStudentsByClassAndCourse(classId, courseId), 0L);
+
+        if (studentCount == 0 || itemCount == 0) {
             result.put("completionRate", 0.0);
-            result.put("totalExams", examCount);
+            result.put(itemCountKey, itemCount);
             result.put("totalStudents", studentCount.intValue());
             result.put("submittedCount", 0);
             result.put("denominator", 0);
             return result;
         }
-        
-        // 3. 计算分母：考试数量 × 选该课程的学生数量
-        long denominator = (long) examCount * studentCount;
-        
-        // 4. 计算分子：该班级选该课程的学生提交的考试数量
-        Long submittedCount = examSubmissionMapper.countSubmissionsByClassAndCourse(classId, courseId);
-        if (submittedCount == null) {
-            submittedCount = 0L;
-        }
-        
-        // 5. 计算完成率
+
+        long denominator = (long) itemCount * studentCount;
+        Long submittedCount = nvl(submissionCountFn.apply(classId, courseId), 0L);
         double completionRate = denominator > 0 ? (double) submittedCount / denominator * 100 : 0.0;
-        
+
         result.put("completionRate", completionRate);
-        result.put("totalExams", examCount);
+        result.put(itemCountKey, itemCount);
         result.put("totalStudents", studentCount.intValue());
         result.put("submittedCount", submittedCount);
         result.put("denominator", denominator);
-        
         return result;
+    }
+
+    private static Long nvl(Long value, Long defaultVal) {
+        return value != null ? value : defaultVal;
     }
 
     /**
@@ -835,196 +743,175 @@ public class ClassAnalysisServiceImpl implements ClassAnalysisService {
     @Override
     public Map<String, Object> getStudentAnalysisData(Long studentId) {
         Map<String, Object> result = new HashMap<>();
-        
-        // 1. 获取学生基本信息
+
         User student = userMapper.selectById(studentId);
-        if (student == null) {
-            return result; // 如果学生不存在，返回空结果
-        }
-        // 优先使用真实姓名，如果没有则使用用户名
+        if (student == null) return result;
+
         result.put("studentName", student.getRealName() != null ? student.getRealName() : student.getUsername());
         result.put("studyScore", student.getStudyScore() != null ? student.getStudyScore() : 0);
-        
-        // 2. 获取登录记录趋势（最近30天）
-        LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(29); // 最近30天（包含今天）
-        QueryWrapper<StudentLoginLog> loginQw = new QueryWrapper<>();
-        loginQw.eq("student_id", studentId)
-               .ge("login_time", startDate.atStartOfDay())
-               .orderByAsc("login_time");
-        
-        List<StudentLoginLog> loginLogs = studentLoginLogMapper.selectList(loginQw);
-        StringBuilder loginTrend = new StringBuilder();
-        loginTrend.append("最近30天登录记录：\n");
-        if (loginLogs.isEmpty()) {
-            loginTrend.append("无登录记录\n");
-        } else {
-            // 按日期分组统计登录次数
-            Map<String, Long> loginCounts = loginLogs.stream()
-                .collect(Collectors.groupingBy(
-                    log -> log.getLoginTime().toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
-                    Collectors.counting()
-                ));
-            // 格式化输出：日期: 登录次数
-            loginCounts.forEach((date, count) -> {
-                loginTrend.append(date).append(": ").append(count).append("次\n");
-            });
-            loginTrend.append("总计登录天数：").append(loginCounts.size()).append("天\n");
-        }
-        result.put("loginTrend", loginTrend.toString());
-        
-        // 3. 获取作业成绩趋势
-        QueryWrapper<AssignmentSubmission> assignQw = new QueryWrapper<>();
-        assignQw.eq("student_id", studentId)
-                .orderByAsc("submitted_at"); // 按提交时间正序排列
-        List<AssignmentSubmission> assignmentSubmissions = assignmentSubmissionMapper.selectList(assignQw);
-        
-        StringBuilder homeworkTrend = new StringBuilder();
-        homeworkTrend.append("作业成绩趋势：\n");
-        if (assignmentSubmissions.isEmpty()) {
-            homeworkTrend.append("暂无作业提交记录\n");
-        } else {
-            // 遍历所有作业提交记录，格式化输出
-            for (AssignmentSubmission submission : assignmentSubmissions) {
-                Assignment assignment = assignmentMapper.selectById(submission.getAssignmentId());
-                String title = assignment != null ? assignment.getTitle() : "未知作业";
-                homeworkTrend.append(title)
-                            .append(" - 提交时间：")
-                            .append(submission.getSubmittedAt() != null ? 
-                                submission.getSubmittedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "未知")
-                            .append(" - 成绩：")
-                            .append(submission.getScore() != null ? submission.getScore() : "未评分")
-                            .append("分\n");
-            }
-            // 计算作业平均成绩
-            double avgScore = assignmentSubmissions.stream()
-                .filter(s -> s.getScore() != null)
-                .mapToInt(AssignmentSubmission::getScore)
-                .average()
-                .orElse(0.0);
-            homeworkTrend.append("作业平均成绩：").append(String.format("%.1f", avgScore)).append("分\n");
-        }
-        result.put("homeworkTrend", homeworkTrend.toString());
-        
-        // 4. 获取考试成绩趋势
-        QueryWrapper<ExamResult> examQw = new QueryWrapper<>();
-        examQw.eq("student_id", studentId)
-              .orderByAsc("created_at"); // 按创建时间正序排列
-        List<ExamResult> examResults = examResultMapper.selectList(examQw);
-        
-        StringBuilder examTrend = new StringBuilder();
-        examTrend.append("考试成绩趋势：\n");
-        if (examResults.isEmpty()) {
-            examTrend.append("暂无考试记录\n");
-        } else {
-            // 遍历所有考试记录，格式化输出
-            for (ExamResult examResult : examResults) {
-                Exam exam = examMapper.selectById(examResult.getExamId());
-                String title = exam != null ? exam.getTitle() : "未知考试";
-                examTrend.append(title)
-                         .append(" - 考试时间：")
-                         .append(examResult.getCreatedAt() != null ? 
-                             examResult.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "未知")
-                         .append(" - 成绩：")
-                         .append(examResult.getScore() != null ? examResult.getScore() : "未评分")
-                         .append("分\n");
-            }
-            // 计算考试平均成绩
-            double avgScore = examResults.stream()
-                .filter(e -> e.getScore() != null)
-                .mapToDouble(ExamResult::getScore)
-                .average()
-                .orElse(0.0);
-            examTrend.append("考试平均成绩：").append(String.format("%.1f", avgScore)).append("分\n");
-        }
-        result.put("examTrend", examTrend.toString());
-        
-        // 5. 获取作业具体作答详情（最近5次作业）
-        // 按提交时间倒序排列，取最近5次
-        List<AssignmentSubmission> recentAssignments = assignmentSubmissions.stream()
-            .sorted((a, b) -> b.getSubmittedAt().compareTo(a.getSubmittedAt()))
-            .limit(5)
-            .collect(Collectors.toList());
-        
-        StringBuilder homeworkDetails = new StringBuilder();
-        homeworkDetails.append("最近作业作答详情：\n");
-        if (recentAssignments.isEmpty()) {
-            homeworkDetails.append("暂无作业作答记录\n");
-        } else {
-            // 遍历最近5次作业，获取每道题的详细作答情况
-            for (AssignmentSubmission submission : recentAssignments) {
-                Assignment assignment = assignmentMapper.selectById(submission.getAssignmentId());
-                String title = assignment != null ? assignment.getTitle() : "未知作业";
-                homeworkDetails.append("\n【作业】").append(title).append("\n");
-                
-                // 获取该作业的所有题目作答详情
-                List<AssignmentSubmissionDetail> details = getAssignmentDetails(submission.getId());
-                if (details.isEmpty()) {
-                    homeworkDetails.append("  无详细作答记录\n");
-                } else {
-                    // 格式化输出每道题的作答情况
-                    for (AssignmentSubmissionDetail detail : details) {
-                        homeworkDetails.append("  题目：").append(detail.getContent() != null ? detail.getContent() : "未知题目").append("\n");
-                        homeworkDetails.append("  学生答案：").append(detail.getAnswerText() != null ? detail.getAnswerText() : "未作答").append("\n");
-                        homeworkDetails.append("  正确答案：").append(detail.getAnswer() != null ? detail.getAnswer() : "未知").append("\n");
-                        homeworkDetails.append("  是否正确：").append(Boolean.TRUE.equals(detail.getIsCorrect()) ? "正确" : "错误").append("\n");
-                        homeworkDetails.append("  得分：").append(detail.getScore() != null ? detail.getScore() : 0).append("分\n");
-                        // 如果有错误原因，也输出
-                        if (detail.getErrorReason() != null && !detail.getErrorReason().isEmpty()) {
-                            homeworkDetails.append("  错误原因：").append(detail.getErrorReason()).append("\n");
-                        }
-                        homeworkDetails.append("\n");
-                    }
-                }
-            }
-        }
-        result.put("homeworkDetails", homeworkDetails.toString());
-        
-        // 6. 获取考试具体作答详情（最近3次考试）
-        // 按创建时间倒序排列，取最近3次
-        List<ExamResult> recentExams = examResults.stream()
-            .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-            .limit(3)
-            .collect(Collectors.toList());
-        
-        StringBuilder examDetails = new StringBuilder();
-        examDetails.append("最近考试作答详情：\n");
-        if (recentExams.isEmpty()) {
-            examDetails.append("暂无考试作答记录\n");
-        } else {
-            // 遍历最近3次考试，获取每道题的详细作答情况
-            for (ExamResult examResult : recentExams) {
-                Exam exam = examMapper.selectById(examResult.getExamId());
-                String title = exam != null ? exam.getTitle() : "未知考试";
-                examDetails.append("\n【考试】").append(title).append("\n");
-                examDetails.append("  总分：").append(examResult.getScore() != null ? examResult.getScore() : 0).append("分\n");
-                
-                // 查询该考试的所有题目答案详情
-                QueryWrapper<ExamAnswer> answerQw = new QueryWrapper<>();
-                answerQw.eq("exam_result_id", examResult.getId());
-                List<ExamAnswer> examAnswers = examAnswerMapper.selectList(answerQw);
-                
-                if (examAnswers.isEmpty()) {
-                    examDetails.append("  无详细作答记录\n");
-                } else {
-                    // 格式化输出每道题的作答情况
-                    for (ExamAnswer answer : examAnswers) {
-                        examDetails.append("  题目ID：").append(answer.getQuestionId()).append("\n");
-                        examDetails.append("  学生答案：").append(answer.getStudentAnswer() != null ? answer.getStudentAnswer() : "未作答").append("\n");
-                        examDetails.append("  正确答案：").append(answer.getCorrectAnswer() != null ? answer.getCorrectAnswer() : "未知").append("\n");
-                        examDetails.append("  是否正确：").append(Boolean.TRUE.equals(answer.getIsCorrect()) ? "正确" : "错误").append("\n");
-                        examDetails.append("  得分：").append(answer.getScore() != null ? answer.getScore() : 0).append("分\n");
-                        // 如果有AI反馈，也输出
-                        if (answer.getAiFeedback() != null && !answer.getAiFeedback().isEmpty()) {
-                            examDetails.append("  AI反馈：").append(answer.getAiFeedback()).append("\n");
-                        }
-                        examDetails.append("\n");
-                    }
-                }
-            }
-        }
-        result.put("examDetails", examDetails.toString());
-        
+        result.put("loginTrend", buildLoginTrend(studentId));
+
+        List<AssignmentSubmission> submissions = querySubmissions(studentId);
+        result.put("homeworkTrend", buildHomeworkTrend(submissions));
+        result.put("homeworkDetails", buildHomeworkDetails(submissions));
+
+        List<ExamResult> examResults = queryExamResults(studentId);
+        result.put("examTrend", buildExamTrend(examResults));
+        result.put("examDetails", buildExamDetails(examResults));
+
         return result;
+    }
+
+    private String buildLoginTrend(Long studentId) {
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(29);
+        QueryWrapper<StudentLoginLog> qw = new QueryWrapper<>();
+        qw.eq("student_id", studentId)
+          .ge("login_time", startDate.atStartOfDay())
+          .orderByAsc("login_time");
+        List<StudentLoginLog> logs = studentLoginLogMapper.selectList(qw);
+
+        StringBuilder sb = new StringBuilder("最近30天登录记录：\n");
+        if (logs.isEmpty()) {
+            sb.append("无登录记录\n");
+            return sb.toString();
+        }
+        Map<String, Long> counts = logs.stream()
+            .collect(Collectors.groupingBy(
+                log -> log.getLoginTime().toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                Collectors.counting()));
+        counts.forEach((date, count) -> sb.append(date).append(": ").append(count).append("次\n"));
+        sb.append("总计登录天数：").append(counts.size()).append("天\n");
+        return sb.toString();
+    }
+
+    private List<AssignmentSubmission> querySubmissions(Long studentId) {
+        QueryWrapper<AssignmentSubmission> qw = new QueryWrapper<>();
+        qw.eq("student_id", studentId).orderByAsc("submitted_at");
+        return assignmentSubmissionMapper.selectList(qw);
+    }
+
+    private String buildHomeworkTrend(List<AssignmentSubmission> submissions) {
+        StringBuilder sb = new StringBuilder("作业成绩趋势：\n");
+        if (submissions.isEmpty()) {
+            sb.append("暂无作业提交记录\n");
+            return sb.toString();
+        }
+        for (AssignmentSubmission s : submissions) {
+            Assignment a = assignmentMapper.selectById(s.getAssignmentId());
+            sb.append(a != null ? a.getTitle() : "未知作业")
+              .append(" - 提交时间：")
+              .append(s.getSubmittedAt() != null
+                  ? s.getSubmittedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "未知")
+              .append(" - 成绩：")
+              .append(s.getScore() != null ? s.getScore() : "未评分")
+              .append("分\n");
+        }
+        double avg = submissions.stream()
+            .filter(s -> s.getScore() != null)
+            .mapToInt(AssignmentSubmission::getScore).average().orElse(0.0);
+        sb.append("作业平均成绩：").append(String.format("%.1f", avg)).append("分\n");
+        return sb.toString();
+    }
+
+    private String buildHomeworkDetails(List<AssignmentSubmission> submissions) {
+        List<AssignmentSubmission> recent = submissions.stream()
+            .sorted((a, b) -> b.getSubmittedAt().compareTo(a.getSubmittedAt()))
+            .limit(5).collect(Collectors.toList());
+
+        StringBuilder sb = new StringBuilder("最近作业作答详情：\n");
+        if (recent.isEmpty()) {
+            sb.append("暂无作业作答记录\n");
+            return sb.toString();
+        }
+        for (AssignmentSubmission s : recent) {
+            Assignment a = assignmentMapper.selectById(s.getAssignmentId());
+            sb.append("\n【作业】").append(a != null ? a.getTitle() : "未知作业").append("\n");
+
+            List<AssignmentSubmissionDetail> details = getAssignmentDetails(s.getId());
+            if (details.isEmpty()) {
+                sb.append("  无详细作答记录\n");
+            } else {
+                for (AssignmentSubmissionDetail d : details) {
+                    sb.append("  题目：").append(d.getContent() != null ? d.getContent() : "未知题目").append("\n");
+                    sb.append("  学生答案：").append(d.getAnswerText() != null ? d.getAnswerText() : "未作答").append("\n");
+                    sb.append("  正确答案：").append(d.getAnswer() != null ? d.getAnswer() : "未知").append("\n");
+                    sb.append("  是否正确：").append(Boolean.TRUE.equals(d.getIsCorrect()) ? "正确" : "错误").append("\n");
+                    sb.append("  得分：").append(d.getScore() != null ? d.getScore() : 0).append("分\n");
+                    if (d.getErrorReason() != null && !d.getErrorReason().isEmpty()) {
+                        sb.append("  错误原因：").append(d.getErrorReason()).append("\n");
+                    }
+                    sb.append("\n");
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    private List<ExamResult> queryExamResults(Long studentId) {
+        QueryWrapper<ExamResult> qw = new QueryWrapper<>();
+        qw.eq("student_id", studentId).orderByAsc("created_at");
+        return examResultMapper.selectList(qw);
+    }
+
+    private String buildExamTrend(List<ExamResult> examResults) {
+        StringBuilder sb = new StringBuilder("考试成绩趋势：\n");
+        if (examResults.isEmpty()) {
+            sb.append("暂无考试记录\n");
+            return sb.toString();
+        }
+        for (ExamResult r : examResults) {
+            Exam exam = examMapper.selectById(r.getExamId());
+            sb.append(exam != null ? exam.getTitle() : "未知考试")
+              .append(" - 考试时间：")
+              .append(r.getCreatedAt() != null
+                  ? r.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")) : "未知")
+              .append(" - 成绩：")
+              .append(r.getScore() != null ? r.getScore() : "未评分")
+              .append("分\n");
+        }
+        double avg = examResults.stream()
+            .filter(e -> e.getScore() != null)
+            .mapToDouble(ExamResult::getScore).average().orElse(0.0);
+        sb.append("考试平均成绩：").append(String.format("%.1f", avg)).append("分\n");
+        return sb.toString();
+    }
+
+    private String buildExamDetails(List<ExamResult> examResults) {
+        List<ExamResult> recent = examResults.stream()
+            .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+            .limit(3).collect(Collectors.toList());
+
+        StringBuilder sb = new StringBuilder("最近考试作答详情：\n");
+        if (recent.isEmpty()) {
+            sb.append("暂无考试作答记录\n");
+            return sb.toString();
+        }
+        for (ExamResult r : recent) {
+            Exam exam = examMapper.selectById(r.getExamId());
+            sb.append("\n【考试】").append(exam != null ? exam.getTitle() : "未知考试").append("\n");
+            sb.append("  总分：").append(r.getScore() != null ? r.getScore() : 0).append("分\n");
+
+            QueryWrapper<ExamAnswer> answerQw = new QueryWrapper<>();
+            answerQw.eq("exam_result_id", r.getId());
+            List<ExamAnswer> answers = examAnswerMapper.selectList(answerQw);
+
+            if (answers.isEmpty()) {
+                sb.append("  无详细作答记录\n");
+            } else {
+                for (ExamAnswer a : answers) {
+                    sb.append("  题目ID：").append(a.getQuestionId()).append("\n");
+                    sb.append("  学生答案：").append(a.getStudentAnswer() != null ? a.getStudentAnswer() : "未作答").append("\n");
+                    sb.append("  正确答案：").append(a.getCorrectAnswer() != null ? a.getCorrectAnswer() : "未知").append("\n");
+                    sb.append("  是否正确：").append(Boolean.TRUE.equals(a.getIsCorrect()) ? "正确" : "错误").append("\n");
+                    sb.append("  得分：").append(a.getScore() != null ? a.getScore() : 0).append("分\n");
+                    if (a.getAiFeedback() != null && !a.getAiFeedback().isEmpty()) {
+                        sb.append("  AI反馈：").append(a.getAiFeedback()).append("\n");
+                    }
+                    sb.append("\n");
+                }
+            }
+        }
+        return sb.toString();
     }
 }

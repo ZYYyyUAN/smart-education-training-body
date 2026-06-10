@@ -12,7 +12,8 @@ import java.util.Map;
  * Simple JWT utility for generating and validating tokens.
  */
 public class JwtUtil {
-    private static final String SECRET = "xzs-jwt-secret-CHANGE-ME"; // consider externalizing
+    private static final String SECRET = System.getenv().getOrDefault("JWT_SECRET",
+            System.getProperty("jwt.secret", "xzs-jwt-secret-CHANGE-ME"));
     private static final long EXPIRATION_MS = 1000L * 60 * 60 * 24; // 24h
 
     public static String generateToken(Long userId, String username, String role) {

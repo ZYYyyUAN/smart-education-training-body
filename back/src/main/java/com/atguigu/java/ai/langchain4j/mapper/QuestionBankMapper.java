@@ -16,9 +16,10 @@ public interface QuestionBankMapper extends BaseMapper<QuestionBank> {
     @Select("SELECT * FROM question_bank WHERE id IN (SELECT question_id FROM assignment_question WHERE assignment_id = #{assignmentId})")
     List<QuestionBank> selectByAssignmentId(Long assignmentId);
 
-    @Select("SELECT qb.* FROM question_bank qb INNER JOIN exam_question eq ON eq.question_id = qb.id WHERE eq.exam_id = #{examId}")
+    // XML 中定义（含 UNION 查询 auto_exam_question）
     List<QuestionBank> selectByExamId(Long examId);
 
+    // XML 中定义
     List<QuestionBank> selectByCourseId(Long courseId);
 
     void insertBatch(List<QuestionBank> entities);
@@ -30,7 +31,6 @@ public interface QuestionBankMapper extends BaseMapper<QuestionBank> {
             "ORDER BY created_at DESC")
     List<QuestionDto> selectByCreateId(@Param("createdBy") Long createdBy);
 
-
     @Select("SELECT * FROM question_bank")
     List<QuestionBank> list();
 
@@ -40,7 +40,7 @@ public interface QuestionBankMapper extends BaseMapper<QuestionBank> {
     @Select("SELECT * FROM question_bank ORDER BY created_at DESC LIMIT #{limit} OFFSET #{offset}")
     List<QuestionBank> pageAll(@Param("offset") int offset, @Param("limit") int limit);
 
-    @Select("SELECT * FROM question_bank WHERE category_id = #{categoryId} ORDER BY created_at DESC")
+    // XML 中定义
     List<QuestionBank> selectByCategoryId(@Param("categoryId") Long categoryId);
 
     @Select("SELECT COUNT(*) FROM question_bank WHERE category_id = #{categoryId}")
@@ -60,7 +60,8 @@ public interface QuestionBankMapper extends BaseMapper<QuestionBank> {
     @Select("SELECT COUNT(*) FROM question_bank WHERE course_id = #{courseId} AND category_id = #{categoryId}")
     long countByCourseAndCategory(@Param("courseId") Long courseId, @Param("categoryId") Long categoryId);
 
-    List<QuestionBank> selectByIds(@Param("ids") List<Long> ids);
+    // 避免与 BaseMapper.selectByIds 冲突，重命名
+    List<QuestionBank> selectByIdList(@Param("ids") List<Long> ids);
 
     // 其他自定义方法
 }

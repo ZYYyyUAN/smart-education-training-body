@@ -12,26 +12,11 @@ import com.atguigu.java.ai.langchain4j.mapper.StudentMapper;
 import com.atguigu.java.ai.langchain4j.mapper.UserMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-// import com.openai.models.ChatModel;
-// import dev.langchain4j.community.model.dashscope.QwenChatModel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-// import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-// import org.springframework.util.StringUtils;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.openai.models.ChatModel;
-import dev.langchain4j.community.model.dashscope.QwenChatModel;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.PathVariable;
 import reactor.core.publisher.Flux;
@@ -44,10 +29,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.function.Function;
@@ -87,12 +70,14 @@ public class StudentController {
     @Autowired
     private ExamService examService;
 
-    @Autowired
+    @Autowired(required = false)
     private java.util.function.Function<String, dev.langchain4j.rag.content.retriever.ContentRetriever> courseContentRetrieverFactory;
     @Autowired
     private CourseService courseService;
     @Autowired
     private StudentMapper studentMapper;
+    @Autowired
+    private com.atguigu.java.ai.langchain4j.mapper.ResourceMapper resourceMapper;
 
     @Autowired
     private StudyScoreService studyScoreService;
@@ -132,34 +117,35 @@ public class StudentController {
             } catch (Exception ignore) {}
         }
 
-        // 1) 检索
-        var retriever = courseContentRetrieverFactory.apply(namespace);
-        java.util.List<Content> results = retriever.retrieve(Query.from(question));
+        // 1) 检索（Pinecone 未启用时跳过）
         StringBuilder ctx = new StringBuilder();
-        
-        // 记录检索结果数量
-        log.info("[COURSE-CHAT] 课程ID: {}, 命名空间: {}, 检索到 {} 条相关内容", courseId, namespace, results.size());
-        
-        for (Content c : results) {
-            try {
-                String text = c.textSegment().text();
-                ctx.append(text).append("\n\n");
-                log.debug("[COURSE-CHAT] 检索内容片段: {}", text.length() > 100 ? text.substring(0, 100) + "..." : text);
-            } catch (Exception e) {
-                log.warn("[COURSE-CHAT] 处理检索内容失败", e);
+        if (courseContentRetrieverFactory != null) {
+            var retriever = courseContentRetrieverFactory.apply(namespace);
+            java.util.List<Content> results = retriever.retrieve(Query.from(question));
+
+            log.info("[COURSE-CHAT] 课程ID: {}, 命名空间: {}, 检索到 {} 条相关内容", courseId, namespace, results.size());
+
+            for (Content c : results) {
+                try {
+                    String text = c.textSegment().text();
+                    ctx.append(text).append("\n\n");
+                    log.debug("[COURSE-CHAT] 检索内容片段: {}", text.length() > 100 ? text.substring(0, 100) + "..." : text);
+                } catch (Exception e) {
+                    log.warn("[COURSE-CHAT] 处理检索内容失败", e);
+                }
             }
         }
-        
-        // 如果没有检索到相关内容，添加默认的嵌入式开发知识
+
+        // 如果没有检索到相关内容，根据课程资料情况返回对应提示
         if (ctx.length() == 0) {
-            log.warn("[COURSE-CHAT] 未检索到相关内容，使用默认知识库");
-            ctx.append("嵌入式开发进阶课程内容：\n");
-            ctx.append("- ARM架构基础：了解ARM Cortex-M系列处理器架构特点\n");
-            ctx.append("- Linux系统编程：掌握系统调用、文件操作、进程管理\n");
-            ctx.append("- 硬件接口编程：GPIO、UART、SPI、I2C等接口的使用\n");
-            ctx.append("- 驱动开发：字符设备驱动、平台设备驱动开发\n");
-            ctx.append("- 交叉编译：使用arm-linux-gnueabihf工具链进行交叉编译\n");
-            ctx.append("- 调试技术：GDB调试、JTAG调试、串口调试\n");
+            boolean hasResources = courseId != null && resourceMapper.countKnowledgeByCourseId(courseId) > 0;
+            if (hasResources) {
+                log.info("[COURSE-CHAT] 课程资料存在但未检索到相关片段, courseId={}", courseId);
+                return Flux.just("抱歉，课程资料中暂未找到与您问题直接相关的内容，请尝试换个问法。");
+            } else {
+                log.info("[COURSE-CHAT] 课程未上传资料, courseId={}", courseId);
+                return Flux.just("本课程暂未上传教学资料，AI 助教无法基于课件回答。您可以先向教师咨询课程资源情况。");
+            }
         }
 
         // 2) 课程名（数据库查）
@@ -786,88 +772,6 @@ public class StudentController {
         } catch (Exception e) {
             log.error("批量更新学生学习积分失败", e);
             return Result.error("批量更新学习积分失败: " + e.getMessage());
-        }
-    }
-
-    /**
-     * 计算活跃天数（有登录记录的天数）
-     */
-    private int calculateActiveDays(List<Map<String, Object>> loginData) {
-        try {
-            if (loginData == null || loginData.isEmpty()) {
-                return 0;
-            }
-
-            // 统计有登录记录的天数
-            int activeDays = 0;
-            for (Map<String, Object> dayData : loginData) {
-                Object loginCount = dayData.get("loginCount");
-                if (loginCount != null) {
-                    int count = ((Number) loginCount).intValue();
-                    if (count > 0) {
-                        activeDays++;
-                    }
-                }
-            }
-            return activeDays;
-        } catch (Exception e) {
-            log.error("计算活跃天数失败", e);
-            return 0;
-        }
-    }
-
-    /**
-     * 计算连续登录奖励（每5天额外+10分）
-     */
-    private int calculateConsecutiveLoginBonus(List<Map<String, Object>> loginData) {
-        try {
-            if (loginData == null || loginData.isEmpty()) {
-                return 0;
-            }
-
-            // 获取所有有登录记录的日期
-            Set<String> activeDates = new HashSet<>();
-            for (Map<String, Object> dayData : loginData) {
-                Object loginCount = dayData.get("loginCount");
-                if (loginCount != null) {
-                    int count = ((Number) loginCount).intValue();
-                    if (count > 0) {
-                        String date = (String) dayData.get("date");
-                        if (date != null) {
-                            activeDates.add(date);
-                        }
-                    }
-                }
-            }
-
-            if (activeDates.isEmpty()) {
-                return 0;
-            }
-
-            // 按日期排序
-            List<String> sortedDates = new ArrayList<>(activeDates);
-            sortedDates.sort(String::compareTo);
-
-            // 计算连续登录奖励
-            int bonus = 0;
-            int currentStreak = 0;
-
-            for (String date : sortedDates) {
-                // 这里简化处理，假设所有日期都是连续的
-                // 实际应该检查日期是否真正连续
-                currentStreak++;
-
-                // 每5天给一次奖励
-                if (currentStreak >= 5) {
-                    bonus += (currentStreak / 5) * 10;
-                    currentStreak = currentStreak % 5; // 重置计数器
-                }
-            }
-
-            return bonus;
-        } catch (Exception e) {
-            log.error("计算连续登录奖励失败", e);
-            return 0;
         }
     }
 

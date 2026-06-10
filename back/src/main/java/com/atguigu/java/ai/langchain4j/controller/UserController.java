@@ -5,7 +5,6 @@ import com.atguigu.java.ai.langchain4j.entity.Result;
 import com.atguigu.java.ai.langchain4j.entity.User;
 import com.atguigu.java.ai.langchain4j.service.OperationLogService;
 import com.atguigu.java.ai.langchain4j.service.UserService;
-import com.atguigu.java.ai.langchain4j.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -208,193 +207,88 @@ public class UserController {
 
     @PutMapping("/{userId}")
     public Result<String> updateUser(@PathVariable("userId") Long userId, @RequestBody User user, HttpServletRequest request) {
-        OperationLog.Status logStatus = OperationLog.Status.SUCCESS;
-        String errorMessage = null;
+        OperationLog.Status status = OperationLog.Status.SUCCESS;
+        String errMsg = null;
 
         try {
-            if (userId == null) {
-                return Result.error(400, "用户ID必填");
-            }
-            if (user == null) {
-                return Result.error(400, "用户信息不能为空");
-            }
+            if (userId == null) return Result.error(400, "用户ID必填");
+            if (user == null) return Result.error(400, "用户信息不能为空");
 
             log.info("更新用户: userId={}", userId);
 
-            // 检查用户是否存在
             User existingUser = userService.getById(userId);
             if (existingUser == null) {
-                logStatus = OperationLog.Status.FAILED;
-                errorMessage = "用户不存在";
-                return Result.error(404, errorMessage);
+                return Result.error(404, "用户不存在");
             }
 
-            // 设置用户ID
             user.setId(userId);
+            if (user.getReal_name() != null && user.getRealName() == null) user.setRealName(user.getReal_name());
+            if (user.getUserClass() != null && user.getClassName() == null) user.setClassName(user.getUserClass());
+            if (user.getPassword() == null || user.getPassword().trim().isEmpty()) user.setPassword(null);
 
-            // 处理字段映射：real_name -> realName
-            if (user.getReal_name() != null && user.getRealName() == null) {
-                user.setRealName(user.getReal_name());
-            }
-
-            // 处理班级字段映射：userClass -> className
-            if (user.getUserClass() != null && user.getClassName() == null) {
-                user.setClassName(user.getUserClass());
-            }
-
-            // 如果密码为空，不更新密码
-            if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
-                user.setPassword(null); // 设置为null，MyBatis-Plus会忽略null字段
-            }
-
-            // 更新用户信息
             boolean success = userService.updateById(user);
+            if (!success) return Result.error("用户更新失败");
 
-            if (success) {
-                log.info("用户更新成功: userId={}", userId);
+            log.info("用户更新成功: userId={}", userId);
+            logUserOp(request, userId, OperationLog.OperationType.UPDATE,
+                    String.format("更新用户: %s (ID: %d)", existingUser.getUsername(), userId),
+                    status, errMsg, existingUser.getId(), existingUser.getUsername());
+            return Result.ok("用户更新成功");
 
-                // 记录操作日志
-                try {
-                    Long currentUserId = getCurrentUserId(request);
-                    String username = getCurrentUsername(request);
-                    log.info("🔍 获取当前用户信息: userId={}, username={}", currentUserId, username);
-
-                    // 如果无法获取当前用户信息，使用被操作的用户信息
-                    if (currentUserId == null) {
-                        currentUserId = existingUser.getId();
-                        log.info("⚠️ 无法获取操作者ID，使用被操作用户ID: {}", currentUserId);
-                    }
-                    if (username == null || "未知用户".equals(username)) {
-                        username = existingUser.getUsername();
-                        log.info("⚠️ 无法获取操作者用户名，使用被操作用户名: {}", username);
-                    }
-                    String desc = String.format("更新用户: %s (ID: %d)", existingUser.getUsername(), userId);
-                    log.info("📝 准备记录操作日志: userId={}, username={}, desc={}", currentUserId, username, desc);
-                    boolean logResult = operationLogService.logOperation(currentUserId, username, OperationLog.OperationType.UPDATE,
-                            "user", userId, desc, logStatus, errorMessage, request);
-                    log.info("📝 操作日志记录结果: {}", logResult ? "成功" : "失败");
-                } catch (Exception e) {
-                    log.error("❌ 记录操作日志失败", e);
-                }
-
-                return Result.ok("用户更新成功");
-            } else {
-                log.warn("用户更新失败: userId={}", userId);
-                logStatus = OperationLog.Status.FAILED;
-                errorMessage = "更新失败";
-                return Result.error("用户更新失败");
-            }
         } catch (Exception e) {
             log.error("更新用户异常: userId={}", userId, e);
-            logStatus = OperationLog.Status.FAILED;
-            errorMessage = e.getMessage();
-
-            // 记录失败的操作日志
-            try {
-                Long currentUserId = getCurrentUserId(request);
-                String username = getCurrentUsername(request);
-                if (currentUserId == null) {
-                    currentUserId = 0L;
-                }
-                if (username == null || "未知用户".equals(username)) {
-                    username = "系统管理员";
-                }
-                operationLogService.logOperation(currentUserId, username, OperationLog.OperationType.UPDATE,
-                        "user", userId, "更新用户失败", logStatus, errorMessage, request);
-            } catch (Exception ex) {
-                log.warn("记录操作日志失败", ex);
-            }
-
+            logUserOp(request, userId, OperationLog.OperationType.UPDATE, "更新用户失败",
+                    OperationLog.Status.FAILED, e.getMessage(), 0L, "系统管理员");
             return Result.error("更新用户失败:" + e.getMessage());
         }
     }
 
     @DeleteMapping("/{userId}")
     public Result<String> deleteUser(@PathVariable("userId") Long userId, HttpServletRequest request) {
-        OperationLog.Status logStatus = OperationLog.Status.SUCCESS;
-        String errorMessage = null;
+        OperationLog.Status status = OperationLog.Status.SUCCESS;
+        String errMsg = null;
         User deletedUser = null;
 
         try {
-            if (userId == null) {
-                return Result.error(400, "用户ID必填");
-            }
-
+            if (userId == null) return Result.error(400, "用户ID必填");
             log.info("删除用户: userId={}", userId);
 
-            // 检查用户是否存在
             User user = userService.getById(userId);
-            if (user == null) {
-                logStatus = OperationLog.Status.FAILED;
-                errorMessage = "用户不存在";
-                return Result.error(404, errorMessage);
-            }
+            if (user == null) return Result.error(404, "用户不存在");
 
-            deletedUser = user; // 保存用户信息用于日志
-
-            // 删除用户
+            deletedUser = user;
             boolean success = userService.removeById(userId);
+            if (!success) return Result.error("用户删除失败");
 
-            if (success) {
-                log.info("用户删除成功: userId={}, username={}", userId, user.getUsername());
+            log.info("用户删除成功: userId={}, username={}", userId, user.getUsername());
+            logUserOp(request, userId, OperationLog.OperationType.DELETE,
+                    String.format("删除用户: %s (ID: %d)", user.getUsername(), userId),
+                    status, errMsg, 0L, "系统管理员");
+            return Result.ok("用户删除成功");
 
-                // 记录操作日志
-                try {
-                    Long currentUserId = getCurrentUserId(request);
-                    String username = getCurrentUsername(request);
-                    log.info("🔍 获取当前用户信息: userId={}, username={}", currentUserId, username);
-
-                    // 如果无法获取当前用户信息，使用默认值
-                    if (currentUserId == null) {
-                        // 无法获取操作者ID，记录为系统操作
-                        currentUserId = 0L;
-                        log.info("⚠️ 无法获取操作者ID，使用默认值: {}", currentUserId);
-                    }
-                    if (username == null || "未知用户".equals(username)) {
-                        username = "系统管理员";
-                        log.info("⚠️ 无法获取操作者用户名，使用默认值: {}", username);
-                    }
-                    String desc = String.format("删除用户: %s (ID: %d)", user.getUsername(), userId);
-                    log.info("📝 准备记录操作日志: userId={}, username={}, desc={}", currentUserId, username, desc);
-                    boolean logResult = operationLogService.logOperation(currentUserId, username, OperationLog.OperationType.DELETE,
-                            "user", userId, desc, logStatus, errorMessage, request);
-                    log.info("📝 操作日志记录结果: {}", logResult ? "成功" : "失败");
-                } catch (Exception e) {
-                    log.error("❌ 记录操作日志失败", e);
-                }
-
-                return Result.ok("用户删除成功");
-            } else {
-                log.warn("用户删除失败: userId={}", userId);
-                logStatus = OperationLog.Status.FAILED;
-                errorMessage = "删除失败";
-                return Result.error("用户删除失败");
-            }
         } catch (Exception e) {
             log.error("删除用户异常: userId={}", userId, e);
-            logStatus = OperationLog.Status.FAILED;
-            errorMessage = e.getMessage();
-
-            // 记录失败的操作日志
-            try {
-                Long currentUserId = getCurrentUserId(request);
-                String username = getCurrentUsername(request);
-                if (currentUserId == null) {
-                    currentUserId = 0L;
-                }
-                if (username == null || "未知用户".equals(username)) {
-                    username = "系统管理员";
-                }
-                String desc = deletedUser != null ?
-                    String.format("删除用户: %s (ID: %d)", deletedUser.getUsername(), userId) :
-                    "删除用户失败";
-                operationLogService.logOperation(currentUserId, username, OperationLog.OperationType.DELETE,
-                        "user", userId, desc, logStatus, errorMessage, request);
-            } catch (Exception ex) {
-                log.warn("记录操作日志失败", ex);
-            }
-
+            String desc = deletedUser != null
+                    ? String.format("删除用户: %s (ID: %d)", deletedUser.getUsername(), userId) : "删除用户失败";
+            logUserOp(request, userId, OperationLog.OperationType.DELETE, desc,
+                    OperationLog.Status.FAILED, e.getMessage(), 0L, "系统管理员");
             return Result.error("删除用户失败:" + e.getMessage());
+        }
+    }
+
+    private void logUserOp(HttpServletRequest request, Long userId,
+            OperationLog.OperationType opType, String desc,
+            OperationLog.Status status, String errMsg,
+            Long fallbackUserId, String fallbackUsername) {
+        try {
+            Long opUserId = getCurrentUserId(request);
+            String opUsername = getCurrentUsername(request);
+            if (opUserId == null) opUserId = fallbackUserId;
+            if (opUsername == null || "未知用户".equals(opUsername)) opUsername = fallbackUsername;
+            operationLogService.logOperation(opUserId, opUsername, opType,
+                    "user", userId, desc, status, errMsg, request);
+        } catch (Exception e) {
+            log.warn("记录操作日志失败", e);
         }
     }
 

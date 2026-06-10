@@ -13,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import reactor.core.publisher.Flux;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -274,7 +273,7 @@ public class QuestionServiceImpl implements QuestionService {
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyList();
         }
-        return questionBankMapper.selectByIds(ids);
+        return questionBankMapper.selectByIdList(ids);
     }
 
 }

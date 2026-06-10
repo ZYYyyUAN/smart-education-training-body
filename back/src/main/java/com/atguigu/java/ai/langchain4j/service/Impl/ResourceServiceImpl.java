@@ -54,9 +54,9 @@ public class ResourceServiceImpl implements ResourceService {
     @Autowired
     private EmbeddingModel embeddingModel;
 
-    @Autowired
+    @Autowired(required = false)
     private Function<String, EmbeddingStore<TextSegment>> embeddingStoreFactory;
-    
+
 
     public void uploadFile(MultipartFile file, Long courseId, Long teacherId, String type) {
         String ossUrl;
@@ -100,10 +100,7 @@ public class ResourceServiceImpl implements ResourceService {
         File tempFile = null;
         try {
             tempFile = File.createTempFile("ingest_", "_" + (fileName == null ? "file" : fileName));
-            try (java.io.InputStream in = new java.net.URL(fileUrl).openStream();
-                 java.io.FileOutputStream out = new java.io.FileOutputStream(tempFile)) {
-                in.transferTo(out);
-            }
+            aliyunOssUtil.downloadToFile(fileUrl, tempFile);
 
             String lower = (fileName == null ? fileUrl : fileName).toLowerCase();
             Document document;
@@ -144,6 +141,9 @@ public class ResourceServiceImpl implements ResourceService {
                     if (!safe.isEmpty()) namespace = safe;
                 }
             } catch (Exception ignore) {}
+            if (embeddingStoreFactory == null) {
+                throw new RuntimeException("Pinecone embeddingStoreFactory 不可用（pinecone.enabled=false），无法入库资源");
+            }
             EmbeddingStore<TextSegment> store = embeddingStoreFactory.apply(namespace);
 
             EmbeddingStoreIngestor
@@ -166,7 +166,8 @@ public class ResourceServiceImpl implements ResourceService {
                 log.warn("记录 knowledge_doc 失败（不影响入库结果）: resourceId={}", resourceId, e);
             }
         } catch (Exception e) {
-            throw new RuntimeException("资源入库知识库失败", e);
+            log.error("资源入库知识库失败: resourceId={}, error={}", resourceId, e.toString(), e);
+            throw new RuntimeException("资源入库知识库失败: " + e.getMessage(), e);
         } finally {
             if (tempFile != null) try { tempFile.delete(); } catch (Exception ignore) {}
         }

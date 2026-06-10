@@ -5,8 +5,10 @@ import cn.xfyun.model.response.TtsResponse;
 import cn.xfyun.service.tts.AbstractTtsWebSocketListener;
 import okhttp3.Response;
 import okhttp3.WebSocket;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -16,13 +18,19 @@ import java.util.UUID;
 @Service
 public class TtsService {
 
-    private final TtsClient ttsClient;
+    @Value("${xfyun.tts.app-id:${xfyun.app-id:e3d65130}}")
+    private String appId;
 
-    public TtsService() throws SignatureException {
-        String appId = "e3d65130";
-        String apiKey = "8fbd66f51fb8cb80d24883bd0aad106e";
-        String apiSecret = "N2FkN2U2MDY0Y2QzMTZlNTA1MjIwMDRl";
+    @Value("${xfyun.tts.api-key:8fbd66f51fb8cb80d24883bd0aad106e}")
+    private String apiKey;
 
+    @Value("${xfyun.tts.api-secret:N2FkN2U2MDY0Y2QzMTZlNTA1MjIwMDRl}")
+    private String apiSecret;
+
+    private TtsClient ttsClient;
+
+    @PostConstruct
+    public void init() throws SignatureException {
         this.ttsClient = new TtsClient.Builder()
                 .vcn("x4_yezi")
                 .signature(appId, apiKey, apiSecret)

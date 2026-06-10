@@ -1,13 +1,23 @@
 // MongoDB初始化脚本
 // 创建数据库和集合
+// 注意：生产环境应通过环境变量注入凭据，而不是在此硬编码
 
 // 切换到目标数据库
 db = db.getSiblingDB('chat_memory_db4');
 
+// 从环境变量读取凭据，开发环境使用默认值
+var mongoUser = _getEnv('MONGO_USER') || 'xiaozhi';
+var mongoPassword = _getEnv('MONGO_PASSWORD');
+if (!mongoPassword) {
+    // 开发环境默认密码（生产环境请通过 MONGO_PASSWORD 环境变量覆盖）
+    print('WARNING: MONGO_PASSWORD not set, using dev default');
+    mongoPassword = 'xiaozhi123';
+}
+
 // 创建用户（如果需要认证）
 db.createUser({
-  user: 'xiaozhi',
-  pwd: 'xiaozhi123',
+  user: mongoUser,
+  pwd: mongoPassword,
   roles: [
     {
       role: 'readWrite',
@@ -59,5 +69,3 @@ db.user_memories.insertOne({
 });
 
 print("MongoDB初始化完成！");
-
-

@@ -7,10 +7,10 @@ services:
     container_name: smart-education-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123456}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-xiaozhi}
       MYSQL_USER: ${MYSQL_USER:-xiaozhi}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-xiaozhi123}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin123456}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-chat_memory_db4}
     ports:
       - "27017:27017"
@@ -52,7 +52,7 @@ services:
       MYSQL_PORT: 3306
       MYSQL_DATABASE: ${MYSQL_DATABASE:-xiaozhi}
       MYSQL_USERNAME: ${MYSQL_USER:-xiaozhi}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-xiaozhi123}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MONGODB_HOST: mongodb
       MONGODB_PORT: 27017
       MONGODB_DATABASE: ${MONGO_DATABASE:-chat_memory_db4}

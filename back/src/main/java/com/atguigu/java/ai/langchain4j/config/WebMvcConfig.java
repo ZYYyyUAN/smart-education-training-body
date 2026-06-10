@@ -30,7 +30,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                     "/captcha", "/captcha/image",
                     "/chat", "/chat/save", "/chat/history", "/chat/stats",
                     "/user/*/avatar", "/user/avatar", "/user/avatars", "/user/profile",
-                    "/v3/api-docs/**", "/swagger-ui/**",
+                    "/v3/api-docs/**", "/swagger-ui/**", "/doc.html", "/webjars/**",
                     "/api/test/**",  // 添加测试端点到排除路径
                     "/error", "/favicon.ico"
                 );

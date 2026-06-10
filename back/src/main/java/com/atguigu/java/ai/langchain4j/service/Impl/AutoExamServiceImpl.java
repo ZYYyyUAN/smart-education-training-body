@@ -7,7 +7,6 @@ import com.atguigu.java.ai.langchain4j.entity.dto.ExamPreviewVO;
 import com.atguigu.java.ai.langchain4j.mapper.*;
 import com.atguigu.java.ai.langchain4j.service.AutoExamService;
 import com.atguigu.java.ai.langchain4j.service.CourseService;
-import com.atguigu.java.ai.langchain4j.service.QuestionService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,9 +53,6 @@ public class AutoExamServiceImpl implements AutoExamService {
     
     @Autowired
     private CourseService courseService;
-    
-    @Autowired
-    private QuestionService questionService;
     
     private final ObjectMapper objectMapper = new ObjectMapper();
     

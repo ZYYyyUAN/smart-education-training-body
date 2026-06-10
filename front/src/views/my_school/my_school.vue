@@ -2075,7 +2075,7 @@ const handleSave = async () => {
   
   .course-card {
     display: flex;
-    height: 180px;
+    min-height: 180px;
     margin: 15px;
     gap: 1rem;
     align-items: center;
@@ -2107,7 +2107,6 @@ const handleSave = async () => {
 .course-card {
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   border-radius: 16px;
-  overflow: hidden;
   background: linear-gradient(135deg, #ffffff 0%, #f8faff 50%, #f0f4ff 100%);
   border: 1px solid rgba(255, 255, 255, 0.8);
   box-shadow: 
@@ -3062,8 +3061,8 @@ const handleSave = async () => {
 }
 .courseButton{
   position: relative;
-  left: 1320px;
-  width: 70px;
+  margin-top: 10px;
+  width: auto;
 }
 .question-card {
   margin-bottom: 20px;

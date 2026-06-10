@@ -16,19 +16,15 @@ import com.atguigu.java.ai.langchain4j.service.TtsService;
 import com.atguigu.java.ai.langchain4j.service.UserService;
 import com.atguigu.java.ai.langchain4j.service.VoiceChatService;
 import com.atguigu.java.ai.langchain4j.util.JwtUtil;
-import com.atguigu.java.ai.langchain4j.util.IatModelZhMain;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 import java.util.Map;
 
-import java.io.File;
 import java.io.InputStream;
 
 @Tag(name = "用户登录与注册")

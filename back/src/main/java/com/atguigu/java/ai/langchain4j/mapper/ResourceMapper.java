@@ -17,6 +17,9 @@ public interface ResourceMapper extends BaseMapper<ResourceFile> {
     @Select("SELECT COUNT(1) FROM knowledge_doc WHERE file_path = #{filePath}")
     int countKnowledgeByFilePath(@Param("filePath") String filePath);
 
+    @Select("SELECT COUNT(1) FROM knowledge_doc WHERE course_id = #{courseId}")
+    int countKnowledgeByCourseId(@Param("courseId") Long courseId);
+
     @Insert("INSERT INTO lesson_plan(course_id, teacher_id, plan_title, content) VALUES(#{courseId}, #{teacherId}, #{planTitle}, #{content})")
     void insertLessonPlan(LessonPlan plan);
 

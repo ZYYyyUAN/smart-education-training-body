@@ -4,6 +4,7 @@ import com.atguigu.java.ai.langchain4j.entity.OperationLog;
 import com.atguigu.java.ai.langchain4j.mapper.OperationLogMapper;
 import com.atguigu.java.ai.langchain4j.service.OperationLogService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -122,8 +123,9 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
         try {
             LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
             wrapper.orderByDesc(OperationLog::getOperationTime);
-            wrapper.last("LIMIT " + limit);
-            return list(wrapper);
+            Page<OperationLog> page = new Page<>(1, Math.max(1, limit));
+            Page<OperationLog> result = page(page, wrapper);
+            return result.getRecords();
         } catch (Exception e) {
             log.error("获取操作日志失败", e);
             return List.of();
@@ -136,8 +138,9 @@ public class OperationLogServiceImpl extends ServiceImpl<OperationLogMapper, Ope
             LambdaQueryWrapper<OperationLog> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(OperationLog::getUserId, userId);
             wrapper.orderByDesc(OperationLog::getOperationTime);
-            wrapper.last("LIMIT " + limit);
-            return list(wrapper);
+            Page<OperationLog> page = new Page<>(1, Math.max(1, limit));
+            Page<OperationLog> result = page(page, wrapper);
+            return result.getRecords();
         } catch (Exception e) {
             log.error("根据用户ID获取操作日志失败", e);
             return List.of();
